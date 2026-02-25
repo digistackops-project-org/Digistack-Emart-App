@@ -127,13 +127,21 @@ WantedBy=multi-user.target
 Enable the backens servive
 ```
 sudo systemctl daemon-reload
-sudo systemctl enable backend
-sudo systemctl start backend
-sudo systemctl status backend
+sudo systemctl enable loginbackend
+sudo systemctl start loginbackend
+sudo systemctl status loginbackend
 ```
 Why we pass Environmental Variables in "Backend.service" file why noy througj export Command or .env file
 Because our Application is JAVA, it will alredy packaged through maven, so exports and .env will take the Linux Environment variable But HERE we need to pass the Variable to the  MAven PAckage so we use Environment variables in Service file so it will pass to the java -jar while running the Package
 To check the Service Logs
 ```
-journalctl -u backend.service
+journalctl -u loginbackend.service
+```
+
+#### Check your Application Health 
+
+```
+http://<Backend-Public-IP>:8080/health
+http://<Backend-Public-IP>:8080/health/live
+http://<Backend-Public-IP>:8080/health/ready
 ```
