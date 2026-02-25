@@ -15,9 +15,9 @@ sudo yum install java-17-amazon-corretto-devel -y
 
 ## Install Maven
 ```
-sudo wget https://dlcdn.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz
-sudo tar xzf apache-maven-3.9.11-bin.tar.gz -C /opt
-sudo ln -s apache-maven-3.9.11 /opt/maven
+sudo wget https://dlcdn.apache.org/maven/maven-3/3.9.12/binaries/apache-maven-3.9.12-bin.tar.gz
+sudo tar xzf apache-maven-3.9.12-bin.tar.gz -C /opt
+sudo ln -s apache-maven-3.9.12 /opt/maven
 ```
 #### Create Profile for Maven  
 ```
@@ -40,7 +40,8 @@ mvn -version
 ### We keep application in one standard location. This is a usual practice that runs in the organization. Lets setup an app directory.
 #### Create Application user to run the Applicatrion
 ```
-sudo addgroup -S emart && sudo adduser -S emart -G emart
+sudo groupadd emart
+sudo useradd -r -g emart -s /sbin/nologin emart
 ```
 #### Create central Application Directory for Application
 ```
