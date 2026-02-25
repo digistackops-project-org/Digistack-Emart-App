@@ -105,10 +105,29 @@ Minimum coverage: 80% line coverage enforced by JaCoCo
 ```
 mvn clean test
 ```
+#### Run the Integration  Test 
+Coverage report: target/site/jacoco/index.html
+Minimum coverage: 80% line coverage enforced by JaCoCo
+```
+mvn verify -P integration-test
+```
 Build the Code without execute the Test cases 
 ```
 mvn clean package -DskipTests -B
 ```
+#### Run the API  Test 
+Coverage report: target/site/jacoco/index.html
+Minimum coverage: 80% line coverage enforced by JaCoCo
+```
+mvn test -P api-test -DAPI_BASE_URL=http://<Backend-Private-IP>:8080
+```
+#### Run All unit, Integration and API Test Cases
+Coverage report: target/site/jacoco/index.html
+Minimum coverage: 80% line coverage enforced by JaCoCo
+```
+mvn clean verify -P integration-test
+```
+
 ### generate JWT_Secret
 ```
 openssl rand -base64 64
