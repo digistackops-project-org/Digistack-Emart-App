@@ -24,16 +24,24 @@ sudo mkdir -p /var/www/frontend/
 sudo chmod -R 755 /var/www/frontend/
 ```
 ## Get the Code
-
+#### Create Application user to run the Applicatrion
 ```
-git clone https://github.com/digistackops-python-org/Python-3-tier-UMS-Local.git
-sudo chown -R ec2-user:ec2-user /home/ec2-user/Python-3-tier-UMS-Local
-cd Python-3-tier-UMS-Local
+sudo addgroup -S emart && sudo adduser -S emart -G emart
+```
+#### Create central Application Directory for Application
+```
+sudo mkdir /app
+```
+```
+cd /app
+sudo git clone https://github.com/digistackops-project-org/Digistack-Emart-App.git
+cd Digistack-Emart-App
 ```
 Switch branch
 
 ```
-git checkout 02-Local-setup-Prod
+sudo git checkout V1-Login-Module
+sudo chown -R emart:emart /app/Digistack-Emart-App
 ```
 Note => Nginx we we for 2 purpose 
         (1) For Frontend Load Balancing 
@@ -53,7 +61,7 @@ Note ==> we already setup the Reverse Proxy using Nginx alredy setup "nginx.conf
 ```
 cd frontend
 sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
-sudo mv /home/ec2-user/Python-3-tier-UMS-Local/frontend/nginx.conf /etc/nginx/
+sudo mv /app/Digistack-Emart-App/frontend/nginx.conf /etc/nginx/
 ```
 Edit your the Backend IP Address in nginx.conf
 ```
