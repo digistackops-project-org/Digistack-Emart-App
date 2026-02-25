@@ -74,6 +74,13 @@ sudo systemctl restart nginx
 ```
 ### Frontend Setup
 Install Dependencies
+### Add Environment .emv
+```
+sudo vim .env
+```
+```
+REACT_APP_API='/api/v1'
+```
 ```
 npm install
 ```
