@@ -65,6 +65,8 @@ sudo chown -R emart:emart /app/Digistack-Emart-App
 ```
 cd backend
 ```
+
+# Deploy to Non-Prod Env
 ### Build the Code 
 #### Run the Unit Test 
 Coverage report: target/site/jacoco/index.html
@@ -77,16 +79,13 @@ Build the Code without execute the Test cases
 ```
 mvn clean package -DskipTests -B
 ```
-
-# Deploy to Non-Prod Env
 ### generate JWT_Secret
 ```
 openssl rand -base64 64
 ```
-### create environment variable .env
+### create environment variable
 ```
 cd /app/Digistack-Emart-App/backend
-sudo vim .env
 ```
 ```
 export MONGO_URI="mongodb://<DB-private-IP>:27017/userdb"
@@ -95,10 +94,21 @@ export JWT_SECRET="VeryStrongSecret"
 ```
 Run the Java -jar command
 ```
-java -jar emart-login-service.jar
+java -jar login-service-1.0.0.jar
 ```
 # Deploy to Prod Env
+### Build the Code 
+#### Run the Unit Test 
+Coverage report: target/site/jacoco/index.html
+Minimum coverage: 80% line coverage enforced by JaCoCo
 
+```
+mvn clean test
+```
+Build the Code without execute the Test cases 
+```
+mvn clean package -DskipTests -B
+```
 ### generate JWT_Secret
 ```
 openssl rand -base64 64
