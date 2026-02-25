@@ -1,7 +1,7 @@
 spring:
   data:
     mongodb:
-      uri: mongodb://<Stage-DB-Private-IP>:27017/userdb_test
+      uri: mongodb://<NP-DB-Private-IP>:27017/userdb_test
 
 app:
   jwt:
