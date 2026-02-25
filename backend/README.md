@@ -134,6 +134,7 @@ openssl rand -base64 64
 ```
 Start Backend Application, for HA we use Linux service for Backend
 ```
+unset MONGO_URI SPRING_PROFILES_ACTIVE JWT_SECRET
 sudo vim /etc/systemd/system/loginbackend.service
 ```
 ```
@@ -146,7 +147,7 @@ User=emart
 Environment="SPRING_PROFILES_ACTIVE=prod"
 Environment="MONGO_URI=mongodb://<DB-Private-IP>:27017/userdb"
 Environment="JWT_SECRET=VeryStrongSecretKey"
-ExecStart=/usr/bin/java -jar /opt/emart/emart-login-service.jar
+ExecStart=/usr/bin/java -jar /app/Digistack-Emart-App/backend/target/login-service-1.0.0.jar
 SuccessExitStatus=143
 Restart=always
 
