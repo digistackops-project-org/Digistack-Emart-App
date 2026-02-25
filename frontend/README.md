@@ -84,6 +84,14 @@ REACT_APP_API='/api/v1'
 ```
 npm install
 ```
+Run the Test cases
+```
+npm test -- --watchAll=false
+```
+Run the Test cases with coverage, Coverage report: coverage/lcov-report/index.html
+```
+npm run test:coverage
+```
 Build the Frontend 
 ```
 npm run build
