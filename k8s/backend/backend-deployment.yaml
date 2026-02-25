@@ -1,0 +1,206 @@
+# ============================================================
+# Emart Login Backend - Kubernetes Manifests
+# Supports: DEV / STAGING / PROD via kustomize overlays
+# ============================================================
+
+# ------- ConfigMap -------
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: login-backend-config
+  namespace: ${NAMESPACE}
+  labels:
+    app: emart-login-backend
+    version: v1
+data:
+  SPRING_PROFILES_ACTIVE: "${SPRING_PROFILE}"
+  SERVER_PORT: "8080"
+  MONGOCK_ENABLED: "true"
+  LOG_LEVEL: "${LOG_LEVEL}"
+
+# ------- Secret (base64 encoded in real usage, use Vault/SealedSecrets in prod) -------
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: login-backend-secret
+  namespace: ${NAMESPACE}
+  labels:
+    app: emart-login-backend
+type: Opaque
+stringData:
+  MONGO_URI: "${MONGO_URI}"
+  JWT_SECRET: "${JWT_SECRET}"
+
+# ------- Deployment -------
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emart-login-backend
+  namespace: ${NAMESPACE}
+  labels:
+    app: emart-login-backend
+    version: v1
+    team: backend
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+spec:
+  replicas: ${REPLICAS}
+  selector:
+    matchLabels:
+      app: emart-login-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Zero downtime deployment
+  template:
+    metadata:
+      labels:
+        app: emart-login-backend
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      # Security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+
+      # Grace period for in-flight requests
+      terminationGracePeriodSeconds: 30
+
+      containers:
+        - name: login-backend
+          image: ${DOCKER_REGISTRY}/emart-login-backend:${IMAGE_TAG}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+
+          # Environment from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: login-backend-config
+            - secretRef:
+                name: login-backend-secret
+
+          # Resource limits
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          # Liveness Probe - restart if unhealthy
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 10
+
+          # Readiness Probe - stop traffic if not ready
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 10
+
+          # Startup Probe - allow extra time for first startup
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 12  # 12 * 10s = 2 min max startup time
+
+          # Container security
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+
+          # Lifecycle hook for graceful shutdown
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 10"]
+
+      # Image pull secret (for private registry)
+      imagePullSecrets:
+        - name: registry-credentials
+
+# ------- Service -------
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emart-login-backend-svc
+  namespace: ${NAMESPACE}
+  labels:
+    app: emart-login-backend
+spec:
+  selector:
+    app: emart-login-backend
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  type: ClusterIP
+
+# ------- HorizontalPodAutoscaler -------
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: emart-login-backend-hpa
+  namespace: ${NAMESPACE}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: emart-login-backend
+  minReplicas: ${MIN_REPLICAS}
+  maxReplicas: ${MAX_REPLICAS}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+# ------- PodDisruptionBudget -------
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: emart-login-backend-pdb
+  namespace: ${NAMESPACE}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: emart-login-backend
