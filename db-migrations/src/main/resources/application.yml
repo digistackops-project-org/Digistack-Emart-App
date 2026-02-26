@@ -5,7 +5,7 @@ spring:
     web-application-type: none  # No HTTP server needed for migrations
   data:
     mongodb:
-      uri: ${MONGO_URI:mongodb://localhost:27017}
+      uri: ${MONGO_URI:mongodb://<DB-Private-IP>:27017}
       database: ${MONGO_DATABASE:cartdb}
 
 mongock:
