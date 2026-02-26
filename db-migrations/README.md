@@ -46,8 +46,6 @@ sudo useradd -r -g emart -s /sbin/nologin emart
 #### Create central Application Directory for Application
 ```
 sudo mkdir /app
-sudo mkdir -p /var/log/emart
-sudo chown emart:emart /var/log/emart
 ```
 
 ```
@@ -58,12 +56,12 @@ cd Digistack-Emart-App
 Switch branch
 
 ```
-sudo git checkout V1-Login-Module
-sudo chown -R emart:emart /app/Digistack-Emart-App
+sudo git checkout V2-cart-Module
+sudo chown -R $USER:$USER /app/Digistack-Emart-App
 ```
 # Backend Setup
 ```
-cd backend
+cd db-migrations
 ```
 
 # Deploy to Non-Prod Env
