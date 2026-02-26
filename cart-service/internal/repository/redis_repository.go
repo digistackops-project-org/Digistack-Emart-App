@@ -8,7 +8,7 @@ import (
 
 	"github.com/emart/cart-service/internal/config"
 	"github.com/emart/cart-service/internal/model"
-	"github.com/go-redis/redis/v9"
+	"github.com/redis/go-redis/v9"
 )
 
 // ============================================================
