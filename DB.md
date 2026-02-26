@@ -50,29 +50,6 @@ sudo systemctl restart mongod
 mongodb://<your-AWS-Public-IP>:27017
 ```
 
-## DB-Tier Setup
-### Create Test Db for Integration Testing
-Login to DB
-```
-mongosh
-```
-Connect to the admin database to create a user
-```
-use admin
-```
-
-Create  application's database "user-account"
-```
-use userdb_test
-```
-### Create PROD DB
-we dont create PROD Db we use versioning and Migration Tool "Mongock" that will create Db and Schema in that automatically
-If you want to know more about 
-Exit from DB
-```
-exit
-```
-
 # Redis Setup
 
 ### Install Redis server
