@@ -20,6 +20,7 @@ Switch the Branch
 ```
 sudo git checkout V2-cart-Module
 cd cart-service
+sudo chown -R $USER:$USER /app/Digistack-Emart-App
 ```
 Download the Dependencies
 ```
