@@ -1,6 +1,6 @@
 ## Launch EC2 "t2.micro" Instance and In Sg, Open port "8080" for JAVA Application 
 # Backend-JAVA Application server
-
+This is Cart DB Migration we execute "java -jar DB_migration.jar" so that it will run and Create the DB schema and stop, Before start the cart service we need to Run these Db migration so that it will create the Required DB 
 ####  Install GIT
 ```
 sudo yum install git -y
