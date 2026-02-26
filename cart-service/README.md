@@ -11,10 +11,23 @@ go version
 # Build the cart Applicatiom
 
 ```
-cd /opt/emart/cart
-git clone <your-repo>
+sudo mkdir /app
+cd /app
+sudo git clone https://github.com/digistackops-project-org/Digistack-Emart-App.git
+cd Digistack-Emart-App
+```
+Switch the Branch
+```
+sudo git checkout 
 cd cart-service
-
+```
+Download the Dependencies
+```
+go clean -modcache
+go mod tidy
+```
+Build the Package
+```
 go build -ldflags="-w -s -X main.version=1.0.0" \
 -o cart-service ./cmd/server/main.go
 ```
