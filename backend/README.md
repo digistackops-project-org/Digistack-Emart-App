@@ -1,4 +1,4 @@
-## Launch EC2 "t2.micro" Instance and In Sg, Open port "8080" for Python Application 
+## Launch EC2 "t2.micro" Instance and In Sg, Open port "8080" for JAVA Application 
 # Backend-JAVA Application server
 
 ####  Install GIT
