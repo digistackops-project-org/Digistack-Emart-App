@@ -79,7 +79,9 @@ Install Dependencies
 sudo vim .env
 ```
 ```
-REACT_APP_API='/api/v1'
+REACT_APP_API_URL=/api/v1
+REACT_APP_CART_API_URL=/cart-api/api/v1
+REACT_APP_ENV=production
 ```
 ```
 npm install
