@@ -18,7 +18,7 @@ cd Digistack-Emart-App
 ```
 Switch the Branch
 ```
-sudo git checkout 
+sudo git checkout V2-cart-Module
 cd cart-service
 ```
 Download the Dependencies
