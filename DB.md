@@ -54,17 +54,17 @@ mongodb://<your-AWS-Public-IP>:27017
 
 ### Install Redis server
 ```
-sudo yum install -y  redis-server
+sudo dnf install -y  redis6
 ```
 ### Enable redis Systemd service
 ```
-sudo systemctl enable redis
-sudo systemctl start redis
-sudo systemctl status redis
+sudo systemctl enable redis6
+sudo systemctl start redis6
+sudo systemctl status redis6
 ```
 ### Setup Redis server
 ```
-sudo vim /etc/redis/redis.conf
+sudo vim /etc/redis6/redis6.conf
 ```
 HERE find the below things and edit these
 1. "requirepass" and edit your Strong password There
@@ -77,12 +77,12 @@ protected-mode yes
 ```
 ### Restart redis Systemd service
 ```
-sudo systemctl restart redis
-sudo systemctl status redis
+sudo systemctl restart redis6
+sudo systemctl status redis6
 ```
 #### Recommended Production Redis Settings {optional but IMP in PROD}
 ```
-sudo vim /etc/redis/redis.conf
+sudo vim /etc/redis6/redis6.conf
 ```
 Set memory Limit
 ```
@@ -95,8 +95,8 @@ appendonly yes
 ```
 ##### Restart redis Systemd service
 ```
-sudo systemctl restart redis
-sudo systemctl status redis
+sudo systemctl restart redis6
+sudo systemctl status redis6
 ```
 # Test the connection
 
