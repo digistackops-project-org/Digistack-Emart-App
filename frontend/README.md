@@ -41,7 +41,7 @@ Switch branch
 
 ```
 sudo git checkout V1-Login-Module
-sudo chown -R emart:emart /app/Digistack-Emart-App
+sudo chown -R $USER:$USER /app/Digistack-Emart-App
 ```
 Note => Nginx we we for 2 purpose 
         (1) For Frontend Load Balancing 
