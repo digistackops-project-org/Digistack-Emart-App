@@ -1,0 +1,187 @@
+version: '3.8'
+# ============================================================
+# Emart Full Stack - Local Development
+# Services: Login + Cart + Frontend + MongoDB x2 + Redis
+# Usage:  docker-compose up -d
+# Access: Frontend http://localhost:3000
+#         Login API http://localhost:8080/health/ready
+#         Cart  API http://localhost:8081/health/ready
+#         Mongo-UI  http://localhost:8082  (profile: tools)
+# ============================================================
+
+services:
+
+  # ── MongoDB: Login service ────────────────────────────────
+  mongodb-login:
+    image: mongo:7.0
+    container_name: emart-mongodb-login
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: userdb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_login_data:/data/db
+    networks: [emart-net]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── MongoDB: Cart service ─────────────────────────────────
+  mongodb-cart:
+    image: mongo:7.0
+    container_name: emart-mongodb-cart
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: cart
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_cart_data:/data/db
+    networks: [emart-net]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis: Cart active store ──────────────────────────────
+  redis:
+    image: redis:7.2-alpine
+    container_name: emart-redis
+    restart: unless-stopped
+    command: redis-server --requirepass redis_local_pass --save 60 1 --loglevel warning
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks: [emart-net]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_local_pass", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Login Service: Java Spring Boot ──────────────────────
+  login-service:
+    build:
+      context: ../emart-login-v1/backend
+      dockerfile: Dockerfile
+    image: emart-login-service:local
+    container_name: emart-login-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      MONGO_URI: mongodb://admin:admin123@mongodb-login:27017/userdb?authSource=admin
+      JWT_SECRET: ZW1hcnQtbG9jYWwtZGV2ZWxvcG1lbnQtc2VjcmV0LWtleS0yMDI0
+      JWT_EXPIRATION_MS: "604800000"
+    ports:
+      - "8080:8080"
+    depends_on:
+      mongodb-login:
+        condition: service_healthy
+    networks: [emart-net]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health/ready"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+
+  # ── Cart Service: Go ─────────────────────────────────────
+  cart-service:
+    build:
+      context: ./cart-service
+      dockerfile: Dockerfile
+    image: emart-cart-service:local
+    container_name: emart-cart-service
+    restart: unless-stopped
+    environment:
+      APP_ENV: dev
+      SERVER_PORT: "8081"
+      GIN_MODE: debug
+      MONGO_URI: mongodb://admin:admin123@mongodb-cart:27017
+      MONGO_DATABASE: cart
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: redis_local_pass
+      JWT_SECRET: ZW1hcnQtbG9jYWwtZGV2ZWxvcG1lbnQtc2VjcmV0LWtleS0yMDI0
+      REDIS_CART_TTL: 168h
+      SYNC_INTERVAL: 30s
+      SYNC_BATCH_SIZE: "100"
+    ports:
+      - "8081:8081"
+    depends_on:
+      mongodb-cart:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [emart-net]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/health/ready"]
+      interval: 20s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  # ── Frontend: React + Nginx ───────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: /api/v1
+        REACT_APP_CART_API_URL: /cart-api/api/v1
+    image: emart-frontend:local
+    container_name: emart-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      login-service:
+        condition: service_healthy
+      cart-service:
+        condition: service_healthy
+    networks: [emart-net]
+
+  # ── Optional: Mongo Express UI (run with --profile tools) ─
+  mongo-express:
+    image: mongo-express:latest
+    container_name: emart-mongo-express
+    restart: unless-stopped
+    profiles: [tools]
+    ports:
+      - "8082:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
+      ME_CONFIG_MONGODB_SERVER: mongodb-login
+    networks: [emart-net]
+    depends_on: [mongodb-login]
+
+  # ── Optional: Redis Commander ──────────────────────────────
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: emart-redis-commander
+    profiles: [tools]
+    ports:
+      - "8083:8081"
+    environment:
+      REDIS_HOSTS: "local:redis:6379:0:redis_local_pass"
+    networks: [emart-net]
+    depends_on: [redis]
+
+volumes:
+  mongodb_login_data:
+  mongodb_cart_data:
+  redis_data:
+
+networks:
+  emart-net:
+    name: emart-net
+    driver: bridge

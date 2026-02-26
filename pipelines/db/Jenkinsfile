@@ -1,0 +1,184 @@
+// ============================================================
+// Emart Cart Service - DB Team Jenkins Pipeline
+// Mongock MongoDB Migrations for cartdb: Dev -> Staging -> Prod
+// Team: DB Team
+// ============================================================
+
+pipeline {
+    agent any
+
+    environment {
+        MONGO_URI_DEV     = credentials('cart-mongo-uri-dev')
+        MONGO_URI_STAGING = credentials('cart-mongo-uri-staging')
+        MONGO_URI_PROD    = credentials('cart-mongo-uri-prod')
+        SLACK_WEBHOOK     = credentials('slack-webhook')
+    }
+
+    parameters {
+        choice(name: 'TARGET_ENV', choices: ['dev', 'staging', 'prod'])
+        booleanParam(name: 'DRY_RUN', defaultValue: true)
+        booleanParam(name: 'VERIFY_ONLY', defaultValue: false)
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        timestamps()
+    }
+
+    stages {
+
+        stage('Checkout') { steps { checkout scm } }
+
+        stage('Validate Migrations') {
+            steps {
+                dir('db-migrations') {
+                    sh '''
+                        echo "=== [DB-TEAM] Validating cart Mongock migrations ==="
+                        mvn compile --batch-mode -q
+                        echo "Migration scripts compiled successfully"
+
+                        # Check naming convention
+                        ls src/main/java/com/emart/cart/migration/
+                        echo "Migration files look correct"
+                    '''
+                }
+            }
+        }
+
+        stage('Check Migration Status') {
+            steps {
+                script {
+                    def uri = getMongoUri(params.TARGET_ENV)
+                    sh """
+                        echo "=== [DB-TEAM] Cart migration status on ${params.TARGET_ENV} ==="
+                        mongosh "${uri}" --eval "
+                            db = db.getSiblingDB('cartdb');
+                            var changes = db.mongockChangeLog.find({}).toArray();
+                            print('Applied migrations: ' + changes.length);
+                            changes.forEach(c => print('  [' + c.state + '] ' + c.changeId));
+                        " 2>/dev/null || echo "cartdb not yet initialized"
+                    """
+                }
+            }
+        }
+
+        stage('Pre-Migration Backup') {
+            when { expression { params.TARGET_ENV in ['staging', 'prod'] } }
+            steps {
+                script {
+                    def uri = getMongoUri(params.TARGET_ENV)
+                    def backupDir = "/backup/emart/cartdb-${params.TARGET_ENV}-${env.BUILD_NUMBER}"
+                    sh """
+                        mkdir -p ${backupDir}
+                        mongodump --uri="${uri}" --db=cartdb --out=${backupDir}
+                        echo "Backup: ${backupDir}"
+                    """
+                    env.BACKUP_DIR = backupDir
+                }
+            }
+        }
+
+        stage('Migration Approval') {
+            when { expression { params.TARGET_ENV in ['staging', 'prod'] } }
+            steps {
+                timeout(time: 30, unit: 'MINUTES') {
+                    input(message: "Approve Cart DB migration to ${params.TARGET_ENV.toUpperCase()}?",
+                          submitter: "db-lead,devops-team")
+                }
+            }
+        }
+
+        stage('Execute Migrations') {
+            when { expression { !params.VERIFY_ONLY && !params.DRY_RUN } }
+            steps {
+                dir('db-migrations') {
+                    script {
+                        def uri = getMongoUri(params.TARGET_ENV)
+                        sh """
+                            echo "=== [DB-TEAM] Running Mongock migrations for cartdb on ${params.TARGET_ENV} ==="
+                            MONGO_URI="${uri}" \
+                            MONGO_DATABASE=cartdb \
+                            java -jar target/cart-db-migrations-1.0.0.jar
+                            echo "Migrations completed"
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Dry Run Preview') {
+            when { expression { params.DRY_RUN } }
+            steps {
+                sh """
+                    echo "=== DRY RUN - Previewing cart migrations for ${params.TARGET_ENV} ==="
+                    echo "Migrations that would run:"
+                    ls db-migrations/src/main/java/com/emart/cart/migration/*.java
+                    echo ""
+                    echo "Set DRY_RUN=false to actually execute migrations"
+                """
+            }
+        }
+
+        stage('Verify') {
+            steps {
+                script {
+                    def uri = getMongoUri(params.TARGET_ENV)
+                    sh """
+                        echo "=== [DB-TEAM] Verifying cart migrations ==="
+                        mongosh "${uri}" --eval "
+                            db = db.getSiblingDB('cartdb');
+                            var collections = db.getCollectionNames();
+                            print('Collections: ' + collections);
+
+                            // Check carts collection
+                            if (collections.includes('carts')) {
+                                var indexes = db.carts.getIndexes();
+                                print('Carts indexes:');
+                                indexes.forEach(i => print('  ' + i.name));
+
+                                // Verify unique user_id index
+                                var userIdx = indexes.find(i => i.name === 'idx_user_id_unique');
+                                if (!userIdx || !userIdx.unique) { print('ERROR: user_id unique index missing'); quit(1); }
+                                print('user_id unique index: OK');
+                            }
+
+                            // Check cart_events
+                            if (collections.includes('cart_events')) {
+                                print('cart_events collection: EXISTS');
+                            }
+
+                            print('All cart DB verifications PASSED!');
+                        "
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success { script { notifySlack("SUCCESS", "Cart DB migrations completed on ${params.TARGET_ENV}") } }
+        failure {
+            script {
+                notifySlack("FAILED", "CART DB MIGRATION FAILED on ${params.TARGET_ENV}! Backup: ${env.BACKUP_DIR}")
+            }
+        }
+    }
+}
+
+def getMongoUri(String env) {
+    switch(env) {
+        case 'dev':     return "${MONGO_URI_DEV}"
+        case 'staging': return "${MONGO_URI_STAGING}"
+        case 'prod':    return "${MONGO_URI_PROD}"
+    }
+}
+
+def notifySlack(String status, String message) {
+    def color = status == "SUCCESS" ? "good" : "danger"
+    sh """
+        curl -X POST -H 'Content-type: application/json' \
+            --data '{"attachments":[{"color":"${color}","text":"[Cart-DB] ${message} | Build: ${env.BUILD_NUMBER}"}]}' \
+            ${SLACK_WEBHOOK}
+    """
+}

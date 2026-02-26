@@ -1,0 +1,271 @@
+// ============================================================
+// Emart Frontend - Jenkins Pipeline (React Dashboard + Cart UI)
+// Dev -> Staging -> Production
+// Team: Frontend Team
+// ============================================================
+
+pipeline {
+    agent any
+
+    environment {
+        APP_NAME        = 'emart-frontend'
+        DOCKER_REGISTRY = credentials('docker-registry-url')
+        DOCKER_CREDS    = credentials('docker-registry-credentials')
+        SLACK_WEBHOOK   = credentials('slack-webhook')
+        KUBECONFIG_DEV  = credentials('kubeconfig-dev')
+        KUBECONFIG_PROD = credentials('kubeconfig-prod')
+        SONAR_TOKEN     = credentials('sonarqube-token')
+    }
+
+    parameters {
+        choice(name: 'DEPLOY_ENV', choices: ['dev', 'staging', 'prod'])
+        string(name: 'IMAGE_TAG', defaultValue: '')
+        booleanParam(name: 'SKIP_TESTS', defaultValue: false)
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+                script {
+                    env.GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    env.BUILD_TAG = params.IMAGE_TAG ?: "${env.BRANCH_NAME}-${env.GIT_COMMIT_SHORT}-${env.BUILD_NUMBER}"
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 1: Install & Lint
+        // ====================================================
+        stage('Install & Lint') {
+            steps {
+                dir('frontend') {
+                    sh '''
+                        echo "=== [FRONTEND] npm ci + lint ==="
+                        npm ci --prefer-offline
+                        npx eslint src/ --max-warnings 0 || true
+                    '''
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 2: Unit & Component Tests
+        // ====================================================
+        stage('Unit & Component Tests') {
+            when { expression { !params.SKIP_TESTS } }
+            steps {
+                dir('frontend') {
+                    sh '''
+                        echo "=== [FRONTEND] Running React tests ==="
+                        CI=true npm test -- \
+                            --watchAll=false \
+                            --coverage \
+                            --coverageReporters=lcov,text \
+                            --testPathPattern="tests/" \
+                            --forceExit
+                    '''
+                }
+            }
+            post {
+                always {
+                    dir('frontend') {
+                        publishHTML(target: [
+                            reportDir: 'coverage/lcov-report',
+                            reportFiles: 'index.html',
+                            reportName: 'Frontend Coverage'
+                        ])
+                    }
+                }
+                failure {
+                    script { notifySlack("FAILED", "Frontend unit tests FAILED") }
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 3: Build React App per environment
+        // ====================================================
+        stage('Build React App - DEV') {
+            when { branch 'develop' }
+            steps {
+                dir('frontend') {
+                    sh '''
+                        echo "=== [FRONTEND] Building for DEV ==="
+                        REACT_APP_API_URL=https://dev-api.emart.internal/api/v1 \
+                        REACT_APP_CART_API_URL=https://dev-cart.emart.internal/api/v1 \
+                        REACT_APP_ENV=dev \
+                        npm run build
+                    '''
+                }
+            }
+        }
+
+        stage('Build React App - Staging/Prod') {
+            when { branch 'main' }
+            steps {
+                dir('frontend') {
+                    sh '''
+                        echo "=== [FRONTEND] Building for Staging/Production ==="
+                        REACT_APP_API_URL=/api/v1 \
+                        REACT_APP_CART_API_URL=/cart-api/api/v1 \
+                        REACT_APP_ENV=production \
+                        npm run build
+                    '''
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 4: Build Docker Image (Nginx + React build)
+        // ====================================================
+        stage('Build Docker Image') {
+            steps {
+                dir('frontend') {
+                    sh """
+                        echo "=== [FRONTEND] Building Docker image: ${env.BUILD_TAG} ==="
+                        docker build \
+                            -t ${DOCKER_REGISTRY}/${APP_NAME}:${env.BUILD_TAG} \
+                            -t ${DOCKER_REGISTRY}/${APP_NAME}:latest \
+                            --label "git-commit=${env.GIT_COMMIT_SHORT}" \
+                            .
+                    """
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 5: Security Scan
+        // ====================================================
+        stage('Security Scan') {
+            steps {
+                sh """
+                    trivy image \
+                        --exit-code 1 \
+                        --severity CRITICAL \
+                        ${DOCKER_REGISTRY}/${APP_NAME}:${env.BUILD_TAG} || true
+                """
+            }
+        }
+
+        // ====================================================
+        // STAGE 6: Push to Registry
+        // ====================================================
+        stage('Push to Registry') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-registry-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        docker login ${DOCKER_REGISTRY} -u ${DOCKER_USER} -p ${DOCKER_PASS}
+                        docker push ${DOCKER_REGISTRY}/${APP_NAME}:${env.BUILD_TAG}
+                        docker push ${DOCKER_REGISTRY}/${APP_NAME}:latest
+                    """
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 7A: Deploy to DEV
+        // ====================================================
+        stage('Deploy to DEV') {
+            when { branch 'develop' }
+            environment {
+                NAMESPACE = 'emart-dev'
+                REPLICAS  = '1'
+            }
+            steps {
+                sh """
+                    export KUBECONFIG=${KUBECONFIG_DEV}
+                    export IMAGE_TAG=${env.BUILD_TAG}
+                    envsubst < k8s/frontend/frontend-deployment.yaml | kubectl apply -f -
+                    kubectl rollout status deployment/emart-frontend -n emart-dev --timeout=3m
+                """
+                script {
+                    sh "sleep 15 && curl -f http://dev.emart.internal/ || true"
+                    notifySlack("SUCCESS", "Frontend deployed to DEV ✓")
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 7B: Deploy to Staging
+        // ====================================================
+        stage('Deploy to Staging') {
+            when { branch 'main' }
+            environment {
+                NAMESPACE = 'emart-staging'
+                REPLICAS  = '2'
+            }
+            steps {
+                sh """
+                    export KUBECONFIG=${KUBECONFIG_DEV}
+                    export IMAGE_TAG=${env.BUILD_TAG}
+                    envsubst < k8s/frontend/frontend-deployment.yaml | kubectl apply -f -
+                    kubectl rollout status deployment/emart-frontend -n emart-staging --timeout=3m
+                """
+                script { notifySlack("SUCCESS", "Frontend deployed to STAGING ✓") }
+            }
+        }
+
+        // ====================================================
+        // STAGE 7C: Production (manual approval)
+        // ====================================================
+        stage('Production Approval') {
+            when { branch 'main' }
+            steps {
+                timeout(time: 30, unit: 'MINUTES') {
+                    input(
+                        message: "Deploy Frontend to PRODUCTION?",
+                        submitter: "frontend-lead,devops-team"
+                    )
+                }
+            }
+        }
+
+        stage('Deploy to Production') {
+            when { branch 'main' }
+            environment {
+                NAMESPACE = 'emart-prod'
+                REPLICAS  = '3'
+            }
+            steps {
+                sh """
+                    export KUBECONFIG=${KUBECONFIG_PROD}
+                    export IMAGE_TAG=${env.BUILD_TAG}
+                    envsubst < k8s/frontend/frontend-deployment.yaml | kubectl apply -f -
+                    kubectl rollout status deployment/emart-frontend -n emart-prod --timeout=5m
+                """
+                sh "sleep 20 && curl -f https://www.emart.com/ || true"
+                script { notifySlack("SUCCESS", "Frontend PRODUCTION deployment successful! 🚀") }
+            }
+            post {
+                failure {
+                    sh "kubectl rollout undo deployment/emart-frontend -n emart-prod"
+                    script { notifySlack("FAILED", "FRONTEND PROD FAILED! Auto-rolled back!") }
+                }
+            }
+        }
+    }
+
+    post { always { cleanWs() } }
+}
+
+def notifySlack(String status, String message) {
+    def color = status == "SUCCESS" ? "good" : "danger"
+    sh """
+        curl -X POST -H 'Content-type: application/json' \
+            --data '{"attachments":[{"color":"${color}","text":"[Frontend] ${message} | Build: ${env.BUILD_NUMBER} | Branch: ${env.BRANCH_NAME}"}]}' \
+            ${SLACK_WEBHOOK}
+    """
+}

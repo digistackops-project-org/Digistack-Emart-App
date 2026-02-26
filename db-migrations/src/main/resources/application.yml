@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: emart-cart-db-migrations
+  main:
+    web-application-type: none  # No HTTP server needed for migrations
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27017}
+      database: ${MONGO_DATABASE:cartdb}
+
+mongock:
+  migration-scan-package: com.emart.cart.migration
+  enabled: true
+  throw-exception-if-cannot-obtain-lock: true
+  lock-acquire-retry-count: 3
+  lock-acquire-retry-sleep-millis: 2000
+
+logging:
+  level:
+    com.emart: INFO
+    io.mongock: INFO

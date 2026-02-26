@@ -1,0 +1,24 @@
+.dashboard-page { min-height: 100vh; background: #f9fafb; }
+.welcome-banner { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 32px; margin-bottom: 32px; }
+.welcome-banner h1 { color: #fff; font-size: 1.8rem; font-weight: 700; margin-bottom: 8px; }
+.welcome-banner p { color: rgba(255,255,255,0.85); }
+.highlight { color: #fbbf24; }
+.page-content { padding-top: 80px; }
+.services-section { padding: 0 32px 32px; }
+.section-title { font-size: 1.3rem; font-weight: 700; color: #111827; margin-bottom: 20px; }
+.service-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+.service-card { background: #fff; border-radius: 16px; border: 1px solid #e5e7eb; padding: 24px; display: flex; gap: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; }
+.service-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+.card-icon { font-size: 2.5rem; flex-shrink: 0; }
+.card-body { flex: 1; }
+.card-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.card-title-row h3 { font-size: 1.1rem; font-weight: 700; color: #111827; }
+.card-badge { font-size: 0.7rem; padding: 2px 8px; background: #fef3c7; color: #92400e; border-radius: 10px; font-weight: 600; }
+.card-desc { color: #6b7280; font-size: 0.875rem; line-height: 1.5; margin-bottom: 16px; }
+.card-btn { padding: 9px 20px; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.card-btn.books { background: #dbeafe; color: #1d4ed8; }
+.card-btn.books:hover { background: #bfdbfe; }
+.card-btn.courses { background: #ede9fe; color: #7c3aed; }
+.card-btn.courses:hover { background: #ddd6fe; }
+.card-btn.software { background: #cffafe; color: #0891b2; }
+.card-btn.software:hover { background: #a5f3fc; }

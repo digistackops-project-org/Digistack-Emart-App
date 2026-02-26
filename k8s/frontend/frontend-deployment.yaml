@@ -1,0 +1,90 @@
+# ============================================================
+# Emart Frontend - Kubernetes Manifests
+# React + Nginx serving SPA + proxying to Login & Cart APIs
+# ============================================================
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emart-frontend
+  namespace: ${NAMESPACE}
+  labels:
+    app: emart-frontend
+    team: frontend
+spec:
+  replicas: ${REPLICAS}
+  selector:
+    matchLabels:
+      app: emart-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: emart-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ${DOCKER_REGISTRY}/emart-frontend:${IMAGE_TAG}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests: { memory: "32Mi", cpu: "25m" }
+            limits:   { memory: "128Mi", cpu: "200m" }
+          livenessProbe:
+            httpGet: { path: /nginx-health, port: 80 }
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      imagePullSecrets:
+        - name: registry-credentials
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emart-frontend-svc
+  namespace: ${NAMESPACE}
+spec:
+  selector:
+    app: emart-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: emart-frontend-ingress
+  namespace: ${NAMESPACE}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  tls:
+    - hosts: ["${FRONTEND_HOST}"]
+      secretName: emart-tls-cert
+  rules:
+    - host: "${FRONTEND_HOST}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: emart-frontend-svc
+                port:
+                  number: 80

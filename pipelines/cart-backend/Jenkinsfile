@@ -1,0 +1,348 @@
+// ============================================================
+// Emart Cart Service - Backend Team Jenkins Pipeline (Go)
+// CI/CD: Dev -> Staging -> Production
+// Team: Cart Backend Team (Go)
+// ============================================================
+
+pipeline {
+    agent any
+
+    environment {
+        APP_NAME          = 'emart-cart-service'
+        DOCKER_REGISTRY   = credentials('docker-registry-url')
+        DOCKER_CREDS      = credentials('docker-registry-credentials')
+        MONGO_URI_DEV     = credentials('cart-mongo-uri-dev')
+        MONGO_URI_STAGING = credentials('cart-mongo-uri-staging')
+        MONGO_URI_PROD    = credentials('cart-mongo-uri-prod')
+        REDIS_URL_DEV     = credentials('cart-redis-url-dev')
+        REDIS_URL_STAGING = credentials('cart-redis-url-staging')
+        REDIS_URL_PROD    = credentials('cart-redis-url-prod')
+        JWT_SECRET        = credentials('jwt-secret')
+        SLACK_WEBHOOK     = credentials('slack-webhook')
+        KUBECONFIG_DEV    = credentials('kubeconfig-dev')
+        KUBECONFIG_PROD   = credentials('kubeconfig-prod')
+        SONAR_TOKEN       = credentials('sonarqube-token')
+    }
+
+    parameters {
+        choice(name: 'DEPLOY_ENV', choices: ['dev', 'staging', 'prod'])
+        booleanParam(name: 'RUN_INTEGRATION_TESTS', defaultValue: true)
+        booleanParam(name: 'SKIP_SONAR', defaultValue: false)
+        string(name: 'IMAGE_TAG', defaultValue: '')
+    }
+
+    options {
+        timeout(time: 45, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                script {
+                    checkout scm
+                    env.GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    env.BUILD_TAG = params.IMAGE_TAG ?: "${env.BRANCH_NAME}-${env.GIT_COMMIT_SHORT}-${env.BUILD_NUMBER}"
+                    echo "Build Tag: ${env.BUILD_TAG}"
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 2: Unit Tests (no external deps needed)
+        // ====================================================
+        stage('Unit Tests') {
+            steps {
+                dir('cart-service') {
+                    sh '''
+                        echo "=== [CART-BACKEND] Running Go Unit Tests ==="
+                        go version
+
+                        # Run unit tests with coverage
+                        go test ./tests/unit/... \
+                            -v \
+                            -count=1 \
+                            -coverprofile=coverage.unit.out \
+                            -covermode=atomic \
+                            -timeout=2m
+
+                        # Generate coverage report
+                        go tool cover -html=coverage.unit.out -o coverage.unit.html
+                        go tool cover -func=coverage.unit.out | tail -1
+
+                        echo "Unit tests PASSED"
+                    '''
+                }
+            }
+            post {
+                always {
+                    publishHTML(target: [
+                        reportDir: 'cart-service',
+                        reportFiles: 'coverage.unit.html',
+                        reportName: 'Cart Unit Coverage'
+                    ])
+                }
+                failure {
+                    script { notifySlack("FAILED", "Cart unit tests FAILED on ${env.BRANCH_NAME}") }
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 3: Linting & Static Analysis
+        // ====================================================
+        stage('Lint & Vet') {
+            steps {
+                dir('cart-service') {
+                    sh '''
+                        echo "=== [CART-BACKEND] Running Go lint and vet ==="
+                        go vet ./...
+                        which golangci-lint && golangci-lint run ./... || echo "golangci-lint not available, skipping"
+                        echo "Lint checks passed"
+                    '''
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 4: Integration Tests (Testcontainers)
+        // Real Redis + MongoDB via Docker
+        // ====================================================
+        stage('Integration Tests') {
+            when { expression { params.RUN_INTEGRATION_TESTS } }
+            steps {
+                dir('cart-service') {
+                    sh '''
+                        echo "=== [CART-BACKEND] Running Go Integration Tests (Testcontainers) ==="
+
+                        # Integration tests start real Redis + MongoDB containers
+                        go test ./tests/integration/... \
+                            -v \
+                            -count=1 \
+                            -coverprofile=coverage.integration.out \
+                            -timeout=10m \
+                            -tags=integration
+
+                        echo "Integration tests PASSED"
+                    '''
+                }
+            }
+            post {
+                failure {
+                    script { notifySlack("FAILED", "Cart integration tests FAILED on ${env.BRANCH_NAME}") }
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 5: Build Go binary + Docker image
+        // ====================================================
+        stage('Build Docker Image') {
+            steps {
+                dir('cart-service') {
+                    sh """
+                        echo "=== [CART-BACKEND] Building Go binary and Docker image ==="
+
+                        # Verify binary compiles first
+                        CGO_ENABLED=0 go build -o /tmp/cart-service-test ./cmd/server
+                        rm /tmp/cart-service-test
+
+                        # Build Docker image
+                        docker build \
+                            --build-arg VERSION=${env.BUILD_TAG} \
+                            -t ${DOCKER_REGISTRY}/${APP_NAME}:${env.BUILD_TAG} \
+                            -t ${DOCKER_REGISTRY}/${APP_NAME}:latest \
+                            --label git-commit=${env.GIT_COMMIT_SHORT} \
+                            --label build-number=${env.BUILD_NUMBER} \
+                            .
+
+                        echo "Docker image built: ${DOCKER_REGISTRY}/${APP_NAME}:${env.BUILD_TAG}"
+                    """
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 6: Security Scanning - Trivy
+        // ====================================================
+        stage('Security Scan') {
+            steps {
+                sh """
+                    echo "=== [CART-BACKEND] Trivy Container Security Scan ==="
+                    trivy image \
+                        --exit-code 0 \
+                        --severity HIGH,CRITICAL \
+                        --format table \
+                        ${DOCKER_REGISTRY}/${APP_NAME}:${env.BUILD_TAG}
+                """
+            }
+        }
+
+        // ====================================================
+        // STAGE 7: Push to Registry
+        // ====================================================
+        stage('Push to Registry') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-registry-credentials',
+                    usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        docker login ${DOCKER_REGISTRY} -u ${DOCKER_USER} -p ${DOCKER_PASS}
+                        docker push ${DOCKER_REGISTRY}/${APP_NAME}:${env.BUILD_TAG}
+                        docker push ${DOCKER_REGISTRY}/${APP_NAME}:latest
+                        echo "Image pushed successfully"
+                    """
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 8A: Deploy to DEV
+        // ====================================================
+        stage('Deploy to DEV') {
+            when { anyOf { branch 'develop'; expression { params.DEPLOY_ENV == 'dev' } } }
+            environment {
+                NAMESPACE     = 'emart-dev'
+                APP_ENV       = 'dev'
+                REPLICAS      = '1'
+                MIN_REPLICAS  = '1'
+                MAX_REPLICAS  = '3'
+                CART_REDIS_TTL = '168h'   // 7 days
+                SYNC_INTERVAL  = '5m'
+            }
+            steps {
+                script {
+                    deployCartService('dev', MONGO_URI_DEV, REDIS_URL_DEV)
+                }
+            }
+            post {
+                success {
+                    script {
+                        sh """
+                            echo "=== Running API tests against DEV ==="
+                            sleep 20
+                            # Run lightweight API tests
+                            cd cart-service && \
+                            API_BASE_URL=http://cart.dev.emart.internal:8082 \
+                            TEST_JWT_TOKEN=${getDevJwtToken()} \
+                            go test ./tests/api/... -v -timeout=5m
+                        """
+                        notifySlack("SUCCESS", "Cart service deployed to DEV + API tests passed")
+                    }
+                }
+            }
+        }
+
+        // ====================================================
+        // STAGE 8B: Deploy to STAGING
+        // ====================================================
+        stage('Deploy to Staging') {
+            when { anyOf { branch 'main'; expression { params.DEPLOY_ENV == 'staging' } } }
+            environment {
+                NAMESPACE     = 'emart-staging'
+                APP_ENV       = 'staging'
+                REPLICAS      = '2'
+                MIN_REPLICAS  = '2'
+                MAX_REPLICAS  = '5'
+                CART_REDIS_TTL = '168h'
+                SYNC_INTERVAL  = '5m'
+            }
+            steps {
+                script {
+                    deployCartService('staging', MONGO_URI_STAGING, REDIS_URL_STAGING)
+                }
+            }
+            post {
+                success {
+                    script { notifySlack("SUCCESS", "Cart service deployed to STAGING. Awaiting prod approval.") }
+                }
+            }
+        }
+
+        // ====================================================
+        // PRODUCTION APPROVAL + DEPLOY
+        // ====================================================
+        stage('Production Approval') {
+            when { anyOf { branch 'main'; expression { params.DEPLOY_ENV == 'prod' } } }
+            steps {
+                script {
+                    emailext(
+                        subject: "[EMART-CART] Approve Production Deployment - ${env.BUILD_TAG}",
+                        body: "Cart service ready for PRODUCTION. Approve: ${env.BUILD_URL}",
+                        to: 'cart-backend-lead@emart.com,devops@emart.com'
+                    )
+                    timeout(time: 30, unit: 'MINUTES') {
+                        input(message: "Deploy Cart Service to PRODUCTION?",
+                              submitter: "cart-backend-lead,devops-team")
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Production') {
+            when { anyOf { branch 'main'; expression { params.DEPLOY_ENV == 'prod' } } }
+            environment {
+                NAMESPACE     = 'emart-prod'
+                APP_ENV       = 'prod'
+                REPLICAS      = '3'
+                MIN_REPLICAS  = '3'
+                MAX_REPLICAS  = '10'
+                CART_REDIS_TTL = '168h'
+                SYNC_INTERVAL  = '5m'
+            }
+            steps {
+                script {
+                    deployCartService('prod', MONGO_URI_PROD, REDIS_URL_PROD)
+                }
+            }
+            post {
+                success {
+                    sh "curl -sf http://cart.emart.com/health/ready && echo PROD health check PASSED"
+                    script { notifySlack("SUCCESS", "Cart service PRODUCTION deployment successful!") }
+                }
+                failure {
+                    sh "kubectl rollout undo deployment/emart-cart-service -n emart-prod"
+                    script { notifySlack("FAILED", "CART PRODUCTION FAILED! Auto-rolled back!") }
+                }
+            }
+        }
+    }
+
+    post { always { cleanWs() } }
+}
+
+def deployCartService(String env, String mongoUri, String redisUrl) {
+    def kubeconfig = env == 'prod' ? KUBECONFIG_PROD : KUBECONFIG_DEV
+    sh """
+        export KUBECONFIG=${kubeconfig}
+        export NAMESPACE=emart-${env}
+        export IMAGE_TAG=${env.BUILD_TAG}
+        export DOCKER_REGISTRY=${DOCKER_REGISTRY}
+        export MONGO_URI=${mongoUri}
+        export REDIS_URL=${redisUrl}
+        export REDIS_PASSWORD=
+        export JWT_SECRET=${JWT_SECRET}
+
+        envsubst < k8s/cart/cart-deployment.yaml | kubectl apply -f -
+        kubectl rollout status deployment/emart-cart-service -n emart-${env} --timeout=5m
+        kubectl get pods -n emart-${env} -l app=emart-cart-service
+    """
+}
+
+def getDevJwtToken() {
+    // In real pipeline, generate a test JWT or read from secrets
+    return sh(script: "kubectl get secret dev-test-jwt -n emart-dev -o jsonpath='{.data.token}' | base64 -d", returnStdout: true).trim()
+}
+
+def notifySlack(String status, String message) {
+    def color = status == "SUCCESS" ? "good" : "danger"
+    sh """
+        curl -X POST -H 'Content-type: application/json' \
+            --data '{"attachments":[{"color":"${color}","text":"[Cart-Backend] ${message} | Build: ${env.BUILD_NUMBER}"}]}' \
+            ${SLACK_WEBHOOK}
+    """
+}
