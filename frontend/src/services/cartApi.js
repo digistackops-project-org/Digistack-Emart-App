@@ -25,6 +25,8 @@ cartApi.interceptors.response.use(
   }
 );
 
+export { cartApi }; 
+
 export const cartService = {
   getCart: () => cartApi.get('/cart'),
   getCartSummary: () => cartApi.get('/cart/summary'),
