@@ -71,6 +71,10 @@ Edit your DB-Private IP Address HERE
 sudo vim src/main/resources/application.yml
 ```
 ### Build the Code without execute the Test cases 
+Give the permission
+```
+sudo chown -R $USER:$USER /app/Digistack-Emart-App
+```
 ```
 mvn clean package 
 ```
