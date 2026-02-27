@@ -28,32 +28,26 @@ type redisRepository struct {
 	client *redis.Client
 	ttl    time.Duration
 }
-
 func NewRedisRepository(cfg *config.Config) (RedisRepository, error) {
-	opt, err := redis.ParseURL(cfg.Redis.URL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid Redis URL: %w", err)
-	}
+    opt := &redis.Options{
+        Addr:     cfg.Redis.Addr,
+        Password: cfg.Redis.Password,
+        DB:       cfg.Redis.DB,
+    }
 
-	if cfg.Redis.Password != "" {
-		opt.Password = cfg.Redis.Password
-	}
-	opt.DB = cfg.Redis.DB
+    client := redis.NewClient(opt)
 
-	client := redis.NewClient(opt)
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
 
-	// Verify connection
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+    if err := client.Ping(ctx).Err(); err != nil {
+        return nil, fmt.Errorf("Redis connection failed: %w", err)
+    }
 
-	if err := client.Ping(ctx).Err(); err != nil {
-		return nil, fmt.Errorf("Redis connection failed: %w", err)
-	}
-
-	return &redisRepository{
-		client: client,
-		ttl:    cfg.Redis.TTL,
-	}, nil
+    return &redisRepository{
+        client: client,
+        ttl:    cfg.Redis.TTL,
+    }, nil
 }
 
 // cartKey generates the Redis key for a user's cart
