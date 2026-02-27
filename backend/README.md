@@ -47,7 +47,7 @@ sudo useradd -r -g emart -s /sbin/nologin emart
 ```
 sudo mkdir /app
 sudo mkdir -p /var/log/emart
-sudo chown emart:emart /var/log/emart
+sudo chown -R $USER:$USER /var/log/emart
 ```
 
 ```
@@ -59,7 +59,7 @@ Switch branch
 
 ```
 sudo git checkout V1-Login-Module
-sudo chown -R emart:emart /app/Digistack-Emart-App
+sudo chown -R $USER:$USER /app/Digistack-Emart-App
 ```
 # Backend Setup
 ```
