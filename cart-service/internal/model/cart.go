@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+    "fmt"
+    "time"
+)
 
 // CartItem represents a single product in the cart
 type CartItem struct {
@@ -61,8 +64,18 @@ type ApiResponse struct {
 func SuccessResponse(data interface{}, message string) ApiResponse {
 	return ApiResponse{Success: true, Message: message, Data: data, Timestamp: time.Now()}
 }
-func ErrorResponse(message string) ApiResponse {
-	return ApiResponse{Success: false, Message: message, Timestamp: time.Now()}
+func ErrorResponse(message string, details ...string) ApiResponse {
+    finalMessage := message
+
+    if len(details) > 0 && details[0] != "" {
+        finalMessage = fmt.Sprintf("%s: %s", message, details[0])
+    }
+
+    return ApiResponse{
+        Success:   false,
+        Message:   finalMessage,
+        Timestamp: time.Now(),
+    }
 }
 
 // HealthStatus for health endpoints
