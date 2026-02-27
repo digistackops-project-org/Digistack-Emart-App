@@ -66,7 +66,7 @@ func (r *mongoRepository) UpsertCart(ctx context.Context, cart *model.Cart) erro
 	defer cancel()
 
 	now := time.Now()
-	cart.LastSyncAt = &now
+	cart.SyncedAt = &now
 
 	filter := bson.D{{Key: "user_id", Value: cart.UserID}}
 	update := bson.D{{Key: "$set", Value: cart}}
