@@ -61,7 +61,7 @@ JWT_SECRET=SuperStrongSecretKey
 ```
 #### Set ownership to your .env file 
 ```
-sudo chown emart:emart /opt/emart/cart/.env
+sudo chown $USER:$USER /app/Digistack-Emart-App/cart-service/.env
 ```
 ## Run the systemd file for running cart service
 ```
@@ -75,9 +75,9 @@ After=network.target mongod.service redis.service
 [Service]
 User=emart
 Group=emart
-WorkingDirectory=/opt/emart/cart
-ExecStart=/opt/emart/cart/cart-service
-EnvironmentFile=/opt/emart/cart/.env
+WorkingDirectory=/app/Digistack-Emart-App/cart-service
+ExecStart=/app/Digistack-Emart-App/cart-service
+EnvironmentFile=/app/Digistack-Emart-App/cart-service/.env
 Restart=always
 RestartSec=5
 
