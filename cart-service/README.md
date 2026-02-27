@@ -27,15 +27,24 @@ Download the Dependencies
 go clean -modcache
 go mod tidy
 ```
-Build the Package
+### Build the Package
+
+#### Increase the SWAP, because go build will consume memory
 ```
-go build -ldflags="-w -s -X main.version=1.0.0" \
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfilev
+```
+### Run the Build Command
+```
+go build -p=1 -ldflags="-w -s -X main.version=1.0.0" \
 -o cart-service ./cmd/server/main.go
 ```
 # Run the cart Application
 ### Set the Environment Variables
 ```
-sudo vim /opt/emart/cart/.env
+sudo vim /app/Digistack-Emart-App/cart-service/.env
 ```
 ```
 APP_ENV=prod
