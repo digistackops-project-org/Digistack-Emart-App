@@ -10,36 +10,36 @@ import './Dashboard.css';
 // ============================================================
 const SAMPLE_PRODUCTS = {
   books: [
-    { product_id: 'b001', product_name: 'Clean Code', price: 699, image_url: '📘', rating: 4.8 },
-    { product_id: 'b002', product_name: 'The Pragmatic Programmer', price: 799, image_url: '📗', rating: 4.9 },
-    { product_id: 'b003', product_name: 'Design Patterns', price: 899, image_url: '📙', rating: 4.7 },
-    { product_id: 'b004', product_name: 'System Design Interview', price: 549, image_url: '📕', rating: 4.6 },
+    { product_id: 'b001', product_name: 'Clean Code',                  price: 699,  image_url: '📘', rating: 4.8 },
+    { product_id: 'b002', product_name: 'The Pragmatic Programmer',    price: 799,  image_url: '📗', rating: 4.9 },
+    { product_id: 'b003', product_name: 'Design Patterns',             price: 899,  image_url: '📙', rating: 4.7 },
+    { product_id: 'b004', product_name: 'System Design Interview',     price: 549,  image_url: '📕', rating: 4.6 },
   ],
   courses: [
-    { product_id: 'c001', product_name: 'React 18 Masterclass', price: 2999, image_url: '⚛️', rating: 4.9 },
-    { product_id: 'c002', product_name: 'Spring Boot Complete', price: 2499, image_url: '🍃', rating: 4.8 },
-    { product_id: 'c003', product_name: 'Go Programming', price: 1999, image_url: '🐹', rating: 4.7 },
-    { product_id: 'c004', product_name: 'Kubernetes for Devs', price: 3499, image_url: '☸️', rating: 4.9 },
+    { product_id: 'c001', product_name: 'React 18 Masterclass',        price: 2999, image_url: '⚛️', rating: 4.9 },
+    { product_id: 'c002', product_name: 'Spring Boot Complete',        price: 2499, image_url: '🍃', rating: 4.8 },
+    { product_id: 'c003', product_name: 'Go Programming',              price: 1999, image_url: '🐹', rating: 4.7 },
+    { product_id: 'c004', product_name: 'Kubernetes for Devs',         price: 3499, image_url: '☸️', rating: 4.9 },
   ],
   software: [
-    { product_id: 's001', product_name: 'JetBrains All Products', price: 9999, image_url: '🔧', rating: 4.9 },
-    { product_id: 's002', product_name: 'GitHub Copilot 1yr', price: 8999, image_url: '🤖', rating: 4.8 },
-    { product_id: 's003', product_name: 'Adobe Creative Suite', price: 4999, image_url: '🎨', rating: 4.7 },
-    { product_id: 's004', product_name: 'VS Code Pro License', price: 2499, image_url: '💻', rating: 4.6 },
+    { product_id: 's001', product_name: 'JetBrains All Products',      price: 9999, image_url: '🔧', rating: 4.9 },
+    { product_id: 's002', product_name: 'GitHub Copilot 1yr',          price: 8999, image_url: '🤖', rating: 4.8 },
+    { product_id: 's003', product_name: 'Adobe Creative Suite',        price: 4999, image_url: '🎨', rating: 4.7 },
+    { product_id: 's004', product_name: 'VS Code Pro License',         price: 2499, image_url: '💻', rating: 4.6 },
   ],
 };
 
 const CATEGORIES = [
-  { id: 'books', label: 'Books', icon: '📚', color: '#10B981', bg: '#ECFDF5', description: 'Programming & Tech Books' },
-  { id: 'courses', label: 'Courses', icon: '🎓', color: '#3B82F6', bg: '#EFF6FF', description: 'Online Learning Courses' },
+  { id: 'books',    label: 'Books',    icon: '📚', color: '#10B981', bg: '#ECFDF5', description: 'Programming & Tech Books' },
+  { id: 'courses',  label: 'Courses',  icon: '🎓', color: '#3B82F6', bg: '#EFF6FF', description: 'Online Learning Courses'  },
   { id: 'software', label: 'Software', icon: '💻', color: '#8B5CF6', bg: '#F5F3FF', description: 'Software Licenses & Tools' },
 ];
 
 function Dashboard() {
-  const { user } = useAuth();
-  const { addItem } = useCart();
+  const { user }     = useAuth();
+  const { addItem }  = useCart();
   const [activeCategory, setActiveCategory] = useState('books');
-  const [addingItem, setAddingItem] = useState(null);
+  const [addingItem,     setAddingItem]      = useState(null);
 
   const firstName = user?.name?.split(' ')[0] || 'there';
 
@@ -47,10 +47,10 @@ function Dashboard() {
     setAddingItem(product.product_id);
     try {
       await addItem({
-        product_id: product.product_id,
+        product_id:   product.product_id,
         product_name: product.product_name,
         category,
-        price: product.price,
+        price:    product.price,
         quantity: 1,
         image_url: product.image_url,
       });
@@ -62,12 +62,16 @@ function Dashboard() {
     }
   };
 
-  const formatPrice = (p) => new Intl.NumberFormat('en-IN', {
-    style: 'currency', currency: 'INR', maximumFractionDigits: 0
-  }).format(p);
+  // FIX: currency is INR, format as Indian Rupee
+  const formatPrice = (p) =>
+    new Intl.NumberFormat('en-IN', {
+      style:              'currency',
+      currency:           'INR',
+      maximumFractionDigits: 0,
+    }).format(p);
 
   const activeProducts = SAMPLE_PRODUCTS[activeCategory] || [];
-  const activeConfig = CATEGORIES.find(c => c.id === activeCategory);
+  const activeConfig   = CATEGORIES.find(c => c.id === activeCategory);
 
   return (
     <div className="dashboard">
@@ -75,7 +79,7 @@ function Dashboard() {
       <div className="dashboard-banner">
         <div className="banner-content">
           <h1>Welcome back, <span className="banner-name">{firstName}</span>! 👋</h1>
-          <p>Explore our top picks across Books, Courses & Software</p>
+          <p>Explore our top picks across Books, Courses &amp; Software</p>
         </div>
         <div className="banner-decoration">🚀</div>
       </div>
@@ -90,10 +94,7 @@ function Dashboard() {
               className={`category-tab ${activeCategory === cat.id ? 'category-tab--active' : ''}`}
               onClick={() => setActiveCategory(cat.id)}
               data-testid={`category-tab-${cat.id}`}
-              style={{
-                '--cat-color': cat.color,
-                '--cat-bg': cat.bg,
-              }}
+              style={{ '--cat-color': cat.color, '--cat-bg': cat.bg }}
             >
               <span className="cat-tab-icon">{cat.icon}</span>
               <div>
@@ -119,10 +120,7 @@ function Dashboard() {
         <div className="products-grid" data-testid="products-grid">
           {activeProducts.map(product => (
             <div className="product-card" key={product.product_id} data-testid="product-card">
-              <div
-                className="product-image"
-                style={{ background: activeConfig?.bg }}
-              >
+              <div className="product-image" style={{ background: activeConfig?.bg }}>
                 <span>{product.image_url}</span>
               </div>
               <div className="product-info">
@@ -145,9 +143,7 @@ function Dashboard() {
                   style={{ '--btn-color': activeConfig?.color }}
                 >
                   {addingItem === product.product_id ? (
-                    <>
-                      <span className="btn-spinner">⟳</span> Adding...
-                    </>
+                    <><span className="btn-spinner">⟳</span> Adding...</>
                   ) : (
                     <>🛒 Add to Cart</>
                   )}

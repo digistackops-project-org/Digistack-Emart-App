@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const storedToken = localStorage.getItem('emart_token');
-    const storedUser = localStorage.getItem('emart_user');
+    const storedUser  = localStorage.getItem('emart_user');
     if (storedToken && storedUser) {
       try {
         setToken(storedToken);

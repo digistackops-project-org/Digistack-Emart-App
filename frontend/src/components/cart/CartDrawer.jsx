@@ -37,36 +37,21 @@ function CartDrawer() {
     }
   };
 
-  const formatPrice = (amount, currency = 'INR') => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  // Go backend returns amounts as numbers (INR)
+  const formatPrice = (amount) =>
+    new Intl.NumberFormat('en-IN', {
+      style: 'currency', currency: 'INR', maximumFractionDigits: 0,
+    }).format(amount || 0);
 
-  const categoryIcon = (cat) => {
-    const icons = { books: '📚', courses: '🎓', software: '💻' };
-    return icons[cat] || '🛍';
-  };
-
-  const categoryColor = (cat) => {
-    const colors = { books: '#10B981', courses: '#3B82F6', software: '#8B5CF6' };
-    return colors[cat] || '#6B7280';
-  };
+  const categoryIcon  = (cat) => ({ books: '📚', courses: '🎓', software: '💻' }[cat] || '🛍');
+  const categoryColor = (cat) => ({ books: '#10B981', courses: '#3B82F6', software: '#8B5CF6' }[cat] || '#6B7280');
 
   return (
     <>
-      {/* Overlay */}
       {cartOpen && (
-        <div
-          className="cart-overlay"
-          onClick={closeCart}
-          data-testid="cart-overlay"
-        />
+        <div className="cart-overlay" onClick={closeCart} data-testid="cart-overlay" />
       )}
 
-      {/* Drawer */}
       <aside
         className={`cart-drawer ${cartOpen ? 'cart-drawer--open' : ''}`}
         data-testid="cart-drawer"
@@ -80,9 +65,7 @@ function CartDrawer() {
               <span className="cart-count-pill">{cartSummary.total_items} items</span>
             )}
           </div>
-          <button className="cart-close-btn" onClick={closeCart} data-testid="cart-close">
-            ✕
-          </button>
+          <button className="cart-close-btn" onClick={closeCart} data-testid="cart-close">✕</button>
         </div>
 
         {/* Body */}
@@ -106,7 +89,6 @@ function CartDrawer() {
             <div className="cart-items" data-testid="cart-items">
               {cart.items.map((item) => (
                 <div className="cart-item" key={item.item_id} data-testid="cart-item">
-                  {/* Category badge */}
                   <div
                     className="item-category-badge"
                     style={{ background: categoryColor(item.category) }}
@@ -114,16 +96,12 @@ function CartDrawer() {
                     {categoryIcon(item.category)}
                   </div>
 
-                  {/* Item details */}
                   <div className="item-details">
                     <p className="item-name" title={item.product_name}>{item.product_name}</p>
                     <p className="item-category">{item.category}</p>
-                    <p className="item-unit-price">
-                      {formatPrice(item.price, cart.currency)} each
-                    </p>
+                    <p className="item-unit-price">{formatPrice(item.price)} each</p>
                   </div>
 
-                  {/* Quantity controls */}
                   <div className="item-controls">
                     <div className="quantity-control">
                       <button
@@ -139,19 +117,13 @@ function CartDrawer() {
                         aria-label="Increase quantity"
                       >+</button>
                     </div>
-
-                    <p className="item-subtotal">
-                      {formatPrice(item.price * item.quantity, cart.currency)}
-                    </p>
-
+                    <p className="item-subtotal">{formatPrice(item.price * item.quantity)}</p>
                     <button
                       className="item-remove-btn"
                       onClick={() => handleRemove(item.item_id, item.product_name)}
                       aria-label={`Remove ${item.product_name}`}
                       data-testid="remove-item"
-                    >
-                      🗑
-                    </button>
+                    >🗑</button>
                   </div>
                 </div>
               ))}
@@ -159,26 +131,22 @@ function CartDrawer() {
           )}
         </div>
 
-        {/* Footer - totals + checkout */}
+        {/* Footer: totals use total_price (Go model field name) */}
         {cart?.items?.length > 0 && (
           <div className="cart-footer">
             <div className="cart-totals">
               <div className="total-row">
                 <span>Subtotal ({cartSummary.total_items} items)</span>
-                <span>{formatPrice(cartSummary.total_amount, cart?.currency)}</span>
+                <span>{formatPrice(cartSummary.total_price)}</span>
               </div>
               <div className="total-row total-row--main">
                 <span>Total</span>
-                <span className="total-amount">
-                  {formatPrice(cartSummary.total_amount, cart?.currency)}
-                </span>
+                <span className="total-amount">{formatPrice(cartSummary.total_price)}</span>
               </div>
             </div>
-
             <button className="checkout-btn" data-testid="checkout-btn">
               Proceed to Checkout →
             </button>
-
             <button className="clear-cart-btn" onClick={handleClear} data-testid="clear-cart">
               Clear Cart
             </button>
