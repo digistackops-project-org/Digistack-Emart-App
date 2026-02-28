@@ -12,7 +12,7 @@ use admin
 
 Create  application's database "user-account"
 ```
-use userdb
+use cart
 ```
 Create a user "appuser" with read/write access to the 'user-account' database
 ```
@@ -20,10 +20,11 @@ db.createUser({
   user: "appuser",
   pwd: "Pa55Word",
   roles: [
-    { role: "readWrite", db: "userdb" }
+    { role: "readWrite", db: "cart" }
   ]
 });
-
+```
+# Backend cart service Setup 
 ### Install go Dependencies
 ```
 sudo yum update -y
