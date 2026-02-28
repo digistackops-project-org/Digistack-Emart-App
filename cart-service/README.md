@@ -1,3 +1,29 @@
+# Login DB Setup
+
+# DB-Tier Setup
+Login to DB
+```
+mongosh
+```
+Connect to the admin database to create a user
+```
+use admin
+```
+
+Create  application's database "user-account"
+```
+use userdb
+```
+Create a user "appuser" with read/write access to the 'user-account' database
+```
+db.createUser({
+  user: "appuser",
+  pwd: "Pa55Word",
+  roles: [
+    { role: "readWrite", db: "userdb" }
+  ]
+});
+
 ### Install go Dependencies
 ```
 sudo yum update -y
