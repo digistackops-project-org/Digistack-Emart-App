@@ -4,8 +4,7 @@ Login to DB
 mongosh --quiet -u dbadmin -p "${ADMIN_PASS}" --authenticationDatabase admin < initdb.js
 ```
 
-# Backend-JAVA Application server for cart Db init
-## Launch EC2 "t2.micro" Instance and In Sg, Open port "8080" for JAVA Application 
+# Tools for Running JAVA Application
 ####  Install GIT
 ```
 sudo yum install git -y
@@ -40,13 +39,17 @@ source /etc/profile.d/maven.sh
 mvn -version
 ```
 
-
+# cart DB init JAVA JOB
 ## Get the Code
 ### We keep application in one standard location. This is a usual practice that runs in the organization. Lets setup an app directory.
 #### Create Application user to run the Applicatrion
 ```
 sudo groupadd emart
 sudo useradd -r -g emart -s /sbin/nologin emart
+```
+## Switch the User
+```
+sudo su 
 ```
 #### Create central Application Directory for Application
 ```
