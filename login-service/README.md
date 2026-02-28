@@ -1,31 +1,10 @@
-# Login DB Setup
-
 # DB-Tier Setup
 Login to DB
 ```
-mongosh
-```
-Connect to the admin database to create a user
-```
-use admin
+mongosh --quiet -u dbadmin -p "${ADMIN_PASS}" --authenticationDatabase admin < initdb.js
 ```
 
-Create  application's database "user-account"
-```
-use userdb
-```
-Create a user "appuser" with read/write access to the 'user-account' database
-```
-db.createUser({
-  user: "appuser",
-  pwd: "Pa55Word",
-  roles: [
-    { role: "readWrite", db: "userdb" }
-  ]
-});
-```
-
-# Backend-JAVA Application server
+# Backend-JAVA Application server for cart Db init
 ## Launch EC2 "t2.micro" Instance and In Sg, Open port "8080" for JAVA Application 
 ####  Install GIT
 ```
