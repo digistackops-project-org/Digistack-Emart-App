@@ -45,10 +45,10 @@ sudo useradd -r -g emart -s /sbin/nologin emart
 ```
 #### Create central Application Directory for Application
 ```
-sudo mkdir -p /app/emart
+sudo mkdir -p /app/emart/login/
 sudo mkdir -p /var/log/emart
 
-sudo chown -R emart:emart /app/emart
+sudo chown -R emart:emart /app/emart/login/
 sudo chown -R emart:emart /var/log/emart
 sudo chmod 750 /var/log/emart
 ```
@@ -140,6 +140,11 @@ Build the Code without execute the Test cases
 ```
 mvn clean package -DskipTests -B
 ```
+move the package to the Application folder
+```
+sudo cp target/login-service-1.0.0.jar /app/emart/login/
+sudo chown -R emart:emart /app/emart/login/
+```
 #### Run the API  Test 
 Coverage report: target/site/jacoco/index.html
 Minimum coverage: 80% line coverage enforced by JaCoCo
@@ -172,7 +177,7 @@ User=emart
 Environment="SPRING_PROFILES_ACTIVE=prod"
 Environment="MONGO_URI=mongodb://<DB-Private-IP>:27017/userdb"
 Environment="JWT_SECRET=VeryStrongSecretKey"
-ExecStart=/usr/bin/java -jar /app/emart/login-service-1.0.0.jar
+ExecStart=/usr/bin/java -jar /app/emart/login/login-service-1.0.0.jar
 SuccessExitStatus=143
 Restart=always
 
