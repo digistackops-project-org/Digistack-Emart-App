@@ -1,7 +1,7 @@
 # DB-Tier Setup
 Login to DB
 ```
-mongosh --quiet -u admin -p "${ADMIN_PASS}" --authenticationDatabase admin < initdb.js
+mongosh --quiet -u dbadmin -p "${ADMIN_PASS}" --authenticationDatabase admin < initdb.js
 ```
 
 ## Test the connection between cart and Redis server
