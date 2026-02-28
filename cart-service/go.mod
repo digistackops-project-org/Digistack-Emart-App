@@ -13,5 +13,4 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.27.0
 	github.com/go-resty/resty/v2 v2.11.0
-	github.com/stretchr/mock v0.0.0-20201026145240-ae6c8f2b6a25
 )
