@@ -45,6 +45,39 @@ Replace 0.0.0.0 in bindIp
 ```
 sudo systemctl restart mongod
 ```
+### Setup Password for the Admin user in Database
+Login to DB
+```
+mongosh
+```
+Connect to the admin database to create a user
+```
+use admin
+```
+Create a user "appuser" with read/write access to the 'user-account' database
+```
+db.createUser({
+  user: "dbadmin",
+  pwd:  "Pa55Word",
+  roles: [
+    { role: "userAdminAnyDatabase", db: "admin" },
+    { role: "readWriteAnyDatabase", db: "admin" },
+    { role: "dbAdminAnyDatabase",   db: "admin" }
+  ]
+});
+```
+Exit from DB
+```
+exit
+```
+####  Ensure Remote authorization is enabled for admin user in mongod.conf
+```
+sudo vim /etc/mongod.conf
+```
+Enable the authentication under security
+```
+ authorization: enabled
+```
 ### Use mongo-compass in your Local Machine and try to access your MongoDB
 ```
 mongodb://<your-AWS-Public-IP>:27017
@@ -97,11 +130,4 @@ appendonly yes
 ```
 sudo systemctl restart redis6
 sudo systemctl status redis6
-```
-# Test the connection
-
-### Test the connection from cart server
-Login to your Cart server
-```
-redis-cli -h <REDIS_SERVER_IP> -a <Redis-Password> ping
 ```
