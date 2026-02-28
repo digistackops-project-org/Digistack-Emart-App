@@ -1,28 +1,14 @@
-# Login DB Setup
-
 # DB-Tier Setup
 Login to DB
 ```
-mongosh
-```
-Connect to the admin database to create a user
-```
-use admin
+mongosh --quiet -u admin -p "${ADMIN_PASS}" --authenticationDatabase admin < initdb.js
 ```
 
-Create  application's database "user-account"
+## Test the connection between cart and Redis server
+
+Login to your Cart server
 ```
-use cart
-```
-Create a user "appuser" with read/write access to the 'user-account' database
-```
-db.createUser({
-  user: "appuser",
-  pwd: "Pa55Word",
-  roles: [
-    { role: "readWrite", db: "cart" }
-  ]
-});
+redis-cli -h <REDIS_SERVER_IP> -a <Redis-Password> ping
 ```
 # Backend cart service Setup 
 ### Install go Dependencies
