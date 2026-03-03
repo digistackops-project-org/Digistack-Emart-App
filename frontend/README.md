@@ -64,12 +64,11 @@ Note ==> we already setup the Reverse Proxy using Nginx alredy setup "nginx.conf
 
 ```
 cd frontend
-sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
-sudo mv /app/Digistack-Emart-App/frontend/nginx.conf /etc/nginx/
+sudo mv /app/Digistack-Emart-App/frontend/emart.conf /etc/nginx/conf.d
 ```
 Edit your the Backend IP Address in nginx.conf
 ```
-sudo vim /etc/nginx/nginx.conf
+sudo vim /etc/nginx/conf.d/emart.conf
 ```
 restart your Nginx
 ```
