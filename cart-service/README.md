@@ -1,5 +1,24 @@
 # Check the DB Connections
-#### init the cart DB 
+## Setup your Application Database by executing "initdb.js" script from Application-server
+
+Step:1 ==> install "mongo-Client" for communicate with Mongo Database
+```
+sudo vim /etc/yum.repos.d/mongodb-org-8.0.repo
+```
+```
+[mongodb-org-8.0]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/amazon/2023/mongodb-org/8.0/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://pgp.mongodb.com/server-8.0.asc
+```
+To install "Mongo-Shell" to communicate with Mongo database
+```
+sudo yum update -y
+sudo yum install -y mongodb-mongosh
+```
+### init the cart DB 
 ```
 mongosh --quiet -u dbadmin -p "${ADMIN_PASS}" --authenticationDatabase admin < initdb.js
 ```
