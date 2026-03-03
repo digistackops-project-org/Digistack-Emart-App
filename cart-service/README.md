@@ -1,4 +1,5 @@
 # Backend cart service Setup 
+Launch EC2 "t3.small" Instance and In Sg, Open port "8081" for go Application, (go need much CPU)
 # Step:1 ==> Install the Required packages
 ```
 sudo yum update -y
@@ -97,6 +98,10 @@ go mod tidy
 go mod download
 ```
 # Step:5 ==> Build the Package
+#### generate JWT_Secret
+```
+openssl rand -base64 64
+```
 ### Set the Environment Variables
 ```
 sudo vim /app/Digistack-Emart-App/cart-service/.env
@@ -116,16 +121,14 @@ JWT_SECRET=SuperStrongSecretKey
 ```
 #### Set ownership to your .env file 
 ```
-sudo chmod 640 /app/Digistack-Emart-App/backend/.env
-sudo chown root:emart /app/Digistack-Emart-App/backend/.env
+sudo chmod 640 //app/Digistack-Emart-App/cart-service/.env
+sudo chown root:emart /app/Digistack-Emart-App/cart-service/.env
 ```
 
 ### Build the package without Test case execution
 ```
 go build -p=1 -ldflags="-w -s -X main.version=1.0.0" \
 -o bin/cart ./cmd/server/main.go
-
-go build -ldflags="-w -s" -o bin/cart ./cmd/server/main.go
 ```
 ## Build the Package as per industry Standards
 
@@ -157,8 +160,6 @@ go test ./tests/integration/... \
 sudo rm -rf bin/*
 go build -p=1 -ldflags="-w -s -X main.version=1.0.0" \
 -o bin/cart ./cmd/server/main.go
-
-go build -ldflags="-w -s" -o bin/cart ./cmd/server/main.go
 ```
 
 #### Give permissions for "emart" user to RUN the Package
@@ -179,7 +180,7 @@ After=network.target mongod.service redis.service
 [Service]
 User=emart
 Group=emart
-WorkingDirectory=/opt/emart/cart/cart
+WorkingDirectory=/opt/emart/cart
 EnvironmentFile=/app/Digistack-Emart-App/cart-service/.env
 
 ExecStart=/opt/emart/cart/cart
@@ -209,7 +210,7 @@ go test ./tests/api/... -v -timeout=5m
 
 # Step:7 ==> Smoke Test {Check your Application Health }
 ```
-curl -sf http://<cart-private=-IP>:8081/health/
+curl -sf http://<cart-private=-IP>:8081/health
 curl -sf http://<cart-private=-IP>:8081/health/live
 curl -sf http://<cart-private=-IP>:8081/health/ready
 ```
