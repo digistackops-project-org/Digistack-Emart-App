@@ -108,8 +108,8 @@ HERE find the below things and edit these
 2. bind 127.0.0.1 ::1 to bind 0.0.0.0
 3. Keep the Protected Mode Enabled "protected-mode yes"
 ```
-requirepass StrongRedisPassword123
 bind 0.0.0.0
+requirepass StrongRedisPassword123
 protected-mode yes
 ```
 ### Restart redis Systemd service
