@@ -67,7 +67,7 @@ Switch branch
 ```
 git checkout V1-Login-Module
 ```
-# Backend Setup
+Backend Setup
 ```
 cd backend
 sudo chown -R $USER:$USER $(pwd)
@@ -105,7 +105,7 @@ cd Digistack-Emart-App/backend
 ```
 openssl rand -base64 64
 ```
-#### Mention our ENv values in ".env"
+#### Mention our ENV values in ".env"
 ```
 sudo vim /app/Digistack-Emart-App/backend/.env
 ```
