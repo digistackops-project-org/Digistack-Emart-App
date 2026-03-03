@@ -3,27 +3,27 @@ Login to DB
 ```
 mongosh --quiet -u dbadmin -p "${ADMIN_PASS}" --authenticationDatabase admin < initdb.js
 ```
-
-# Tools for Running JAVA Application
+# Backend-JAVA Application server
+## Launch EC2 "t2.micro" Instance and In Sg, Open port "8080" for JAVA Application 
+# Step:1 ==> Install the Required packages
 ####  Install GIT
 ```
 sudo yum install git -y
 ``` 
 
-## Install JAVA
-####  Installation of openJDK 17
+#### Install JAVA {openJDK 17}
 ```
 sudo dnf update -y
 sudo yum install java-17-amazon-corretto-devel -y
 ``` 
 
-## Install Maven
+#### Install Maven
 ```
 sudo wget https://dlcdn.apache.org/maven/maven-3/3.9.12/binaries/apache-maven-3.9.12-bin.tar.gz
 sudo tar xzf apache-maven-3.9.12-bin.tar.gz -C /opt
 sudo ln -s apache-maven-3.9.12 /opt/maven
 ```
-#### Create Profile for Maven  
+##### Create Profile for Maven  
 ```
 sudo vi /etc/profile.d/maven.sh
 ```
@@ -32,80 +32,110 @@ sudo vi /etc/profile.d/maven.sh
 export M2_HOME=/opt/maven
 export PATH=${M2_HOME}/bin:${PATH}
 ```
-#### Reload profile
+##### Reload profile
 ```
 sudo chmod +x /etc/profile.d/maven.sh
 source /etc/profile.d/maven.sh
 mvn -version
 ```
 
-# cart DB init JAVA JOB
-## Get the Code
-### We keep application in one standard location. This is a usual practice that runs in the organization. Lets setup an app directory.
+# Step:2 ==> Create one Application User
 #### Create Application user to run the Applicatrion
 ```
-sudo groupadd emart
+sudo groupadd -r emart
 sudo useradd -r -g emart -s /sbin/nologin emart
 ```
-## Switch the User
-```
-sudo su 
-```
+
+
+# Step:3 ==> Get the Code
+### We keep application in one standard location. This is a usual practice that runs in the organization. Lets setup an app directory.
+
 #### Create central Application Directory for Application
 ```
-sudo mkdir /app
+sudo mkdir -p /app
+sudo mkdir -p /opt/emart/login/
 sudo mkdir -p /var/log/emart
-sudo chown -R $USER:$USER /var/log/emart
+
+sudo chown -R emart:emart /opt/emart/login/
+sudo chown -R emart:emart /var/log/emart
+sudo chmod 750 /var/log/emart
 ```
 
+#### our code is in Git Repo 
 ```
 cd /app
-sudo git clone https://github.com/digistackops-project-org/Digistack-Emart-App.git
-cd Digistack-Emart-App
+git clone https://github.com/digistackops-EMART-project/Digistack-Emart-App.git
+cd /Digistack-Emart-App
 ```
 Switch branch
 
 ```
-sudo git checkout V1-Login-Module
-sudo chown -R $USER:$USER /app/Digistack-Emart-App
+git checkout V1-Login-Module
 ```
-# Backend Setup
+Backend Setup
 ```
 cd backend
+sudo chown -R $USER:$USER $(pwd)
 ```
+### Note
+HERE we Normal user dont have permissions for logs "/var/log/emart" & code base "/app/emart" 
 
-# Deploy to Non-Prod Env
-### Build the Code 
-#### Run the Unit Test 
-Coverage report: target/site/jacoco/index.html
-Minimum coverage: 80% line coverage enforced by JaCoCo
+Question-1 ==> if normal user doesn’t have access, how can we see access.log during an issue?
+```
+Correct Ways to Access Logs (Production Safe Methods)
 
+🔹 Option 1: Use sudo (Recommended)
+
+If your normal user is in the wheel group{means root like access}, so he can access the logs 
+
+"sudo tail -f /var/log/emart/loginbackend.log"
+
+🔹 Option 2: Add DevOps User to emart Group (Controlled Access)
+
+"sudo usermod -aG emart devuser"
+
+Then:
+sudo chmod 750 /var/log/emart
+sudo chmod 640 /var/log/emart/*.log
+
+If your normal user is in the emart group, so he can access the logs 
 ```
-mvn clean test
+# Step:4 ==> Download the Dependencies
+
+## Setup environment variable
 ```
-Build the Code without execute the Test cases 
+cd Digistack-Emart-App/backend
 ```
-mvn clean package -DskipTests -B
-```
-### generate JWT_Secret
+#### generate JWT_Secret
 ```
 openssl rand -base64 64
 ```
-### create environment variable
+#### Mention our ENV values in ".env"
 ```
-cd /app/Digistack-Emart-App/backend
+sudo vim /app/Digistack-Emart-App/backend/.env
 ```
+#### Edit the values before export the values
 ```
-export MONGO_URI="mongodb://<DB-private-IP>:27017/userdb"
-export SPRING_PROFILES_ACTIVE=staging
-export JWT_SECRET="VeryStrongSecret"
+SPRING_PROFILE=prod
+MONGO_URI="mongodb://appuser:Pa55Word@<Logib-DB-Private-IP>:27017/userdb?authSource=userdb"
+JWT_SECRET="VeryStrongSecret"
+JWT_EXPIRATION_MS=3600000
+SERVER_PORT=8080
 ```
-Run the Java -jar command
+#### Give proper permission to the .env file which has sensitive DATA
 ```
-java -jar login-service-1.0.0.jar
+sudo chmod 640 /app/Digistack-Emart-App/backend/.env
+sudo chown root:emart /app/Digistack-Emart-App/backend/.env
 ```
-# Deploy to Prod Env
-### Build the Code 
+## Build the Code without execute the Test cases 
+```
+mvn clean package -DskipTests -B
+```
+## Build as per Industry standards
+#### Compile the Code
+```
+mvn clean compile
+```
 #### Run the Unit Test 
 Coverage report: target/site/jacoco/index.html
 Minimum coverage: 80% line coverage enforced by JaCoCo
@@ -114,33 +144,39 @@ Minimum coverage: 80% line coverage enforced by JaCoCo
 mvn clean test
 ```
 #### Run the Integration  Test 
+Before Run the Integration Test our Real DB Up and Running and also our Test Db created in it
 Coverage report: target/site/jacoco/index.html
 Minimum coverage: 80% line coverage enforced by JaCoCo
 ```
 mvn verify -P integration-test
 ```
-Build the Code without execute the Test cases 
-```
-mvn clean package -DskipTests -B
-```
 #### Run the API  Test 
 Coverage report: target/site/jacoco/index.html
 Minimum coverage: 80% line coverage enforced by JaCoCo
 ```
+mvn verify -P api-test
 mvn test -P api-test -DAPI_BASE_URL=http://<Backend-Private-IP>:8080
 ```
 #### Run All unit, Integration and API Test Cases
 Coverage report: target/site/jacoco/index.html
 Minimum coverage: 80% line coverage enforced by JaCoCo
 ```
-mvn clean verify -P integration-test
+mvn clean verify 
 ```
 
-### generate JWT_Secret
+## Build the Package 
+once our test cases are passed then we Build our package
+#### Build the Code without execute the Test cases 
 ```
-openssl rand -base64 64
+mvn clean package -DskipTests -B
 ```
-Start Backend Application, for HA we use Linux service for Backend
+#### Give permissions for "emart" user to RUN the Package
+```
+sudo cp /app/Digistack-Emart-App/backend/tartget/login-service-1.0.0.jar  /opt/emart/login/login-service-1.0.0.jar
+sudo chown emart:emart /opt/emart/login/login-service-1.0.0.jar
+```
+# Step:6 ==> Run the Package
+#### Create the systemd service "loginbbackend" for HA
 ```
 unset MONGO_URI SPRING_PROFILES_ACTIVE JWT_SECRET
 sudo vim /etc/systemd/system/loginbackend.service
@@ -152,18 +188,25 @@ After=network.target
 
 [Service]
 User=emart
-Environment="SPRING_PROFILES_ACTIVE=prod"
-Environment="MONGO_URI=mongodb://<DB-Private-IP>:27017/userdb"
-Environment="JWT_SECRET=VeryStrongSecretKey"
-ExecStart=/usr/bin/java -jar /app/Digistack-Emart-App/backend/target/login-service-1.0.0.jar
+Group=emart
+WorkingDirectory=/opt/emart/login
+EnvironmentFile=/app/Digistack-Emart-App/backend/.env
+ExecStart=/usr/bin/java \
+    -Xmx512m \
+    -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} \
+    -Dspring.data.mongodb.uri=${MONGO_URI} \
+    -Dapp.jwt.secret=${JWT_SECRET} \
+    -jar login-service-1.0.0.jar
 SuccessExitStatus=143
 Restart=always
 
+StandardOutput=append:/var/log/emart/login-service.log
+StandardError=append:/var/log/emart/login-service.log
+
 [Install]
 WantedBy=multi-user.target
-
 ```
-Enable the backens servive
+Enable the Backend servive
 ```
 sudo systemctl daemon-reload
 sudo systemctl enable loginbackend
@@ -177,10 +220,10 @@ To check the Service Logs
 journalctl -u loginbackend.service
 ```
 
-#### Check your Application Health 
+# Step:7 ==> Smoke Test {Check your Application Health }
 
 ```
-http://<Backend-Public-IP>:8080/health
-http://<Backend-Public-IP>:8080/health/live
-http://<Backend-Public-IP>:8080/health/ready
+curl -sf http://<login-private=-IP>:8080/health/
+curl -sf http://<clogin-private=-IP>:8080/health/live
+curl -sf http://<login-private=-IP>:8080/health/ready
 ```
