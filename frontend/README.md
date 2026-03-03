@@ -32,7 +32,7 @@ sudo mkdir /app
 ```
 sudo mkdir -p /var/www/frontend/
 sudo chmod -R 755 /var/www/frontend/
-sudo chown -R emart:emart /var/www/frontend/
+sudo chown -R  www-data:www-data /var/www/frontend/
 ```
 # Step:3 ==> Get the Code
 Our Code we store in GIT Repo
