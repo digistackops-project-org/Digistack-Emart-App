@@ -78,6 +78,10 @@ Enable the authentication under security
 ```
  authorization: enabled
 ```
+### Restart mongoDB
+```
+sudo systemctl start mongod
+```
 ### Use mongo-compass in your Local Machine and try to access your MongoDB
 ```
 mongodb://<your-AWS-Public-IP>:27017
