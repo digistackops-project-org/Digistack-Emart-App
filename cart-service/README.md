@@ -121,7 +121,7 @@ JWT_SECRET=SuperStrongSecretKey
 ```
 #### Set ownership to your .env file 
 ```
-sudo chmod 640 //app/Digistack-Emart-App/cart-service/.env
+sudo chmod 640 /app/Digistack-Emart-App/cart-service/.env
 sudo chown root:emart /app/Digistack-Emart-App/cart-service/.env
 ```
 
