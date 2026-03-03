@@ -37,7 +37,7 @@ mvn -version
 # Step:2 ==> Create one Application User
 #### Create Application user to run the Applicatrion
 ```
-sudo groupadd emart
+sudo groupadd -r emart
 sudo useradd -r -g emart -s /sbin/nologin emart
 ```
 
