@@ -47,16 +47,18 @@ sudo useradd -r -g emart -s /sbin/nologin emart
 
 #### Create central Application Directory for Application
 ```
-sudo mkdir -p /app/emart/login/
+sudo mkdir -p /app
+sudo mkdir -p /opt/emart/login/
 sudo mkdir -p /var/log/emart
 
-sudo chown -R emart:emart /app/emart/login/
+sudo chown -R emart:emart /opt/emart/login/
 sudo chown -R emart:emart /var/log/emart
 sudo chmod 750 /var/log/emart
 ```
 
 #### our code is in Git Repo 
 ```
+cd /app
 git clone https://github.com/digistackops-EMART-project/Digistack-Emart-App.git
 cd /Digistack-Emart-App
 ```
@@ -105,7 +107,7 @@ openssl rand -base64 64
 ```
 #### Mention our ENv values in ".env"
 ```
-sudo vim Digistack-Emart-App/backend/.env
+sudo vim /app/Digistack-Emart-App/backend/.env
 ```
 #### Edit the values before export the values
 ```
@@ -115,8 +117,8 @@ JWT_SECRET="VeryStrongSecret"
 ```
 #### Give proper permission to the .env file which has sensitive DATA
 ```
-sudo chmod 640 /etc/emart/.env
-sudo chown root:emart /etc/emart/.env
+sudo chmod 640 /app/Digistack-Emart-App/backend/.env
+sudo chown root:emart /app/Digistack-Emart-App/backend/.env
 ```
 ## Build the Code without execute the Test cases 
 ```
@@ -163,8 +165,8 @@ mvn clean package -DskipTests -B
 ```
 #### Give permissions for "emart" user to RUN the Package
 ```
-sudo cp tartget/login-service-1.0.0.jar  /app/emart/login/login-service-1.0.0.jar
-sudo chown emart:emart /app/emart/login/login-service-1.0.0.jar
+sudo cp /app/Digistack-Emart-App/backend/tartget/login-service-1.0.0.jar  /opt/emart/login/login-service-1.0.0.jar
+sudo chown emart:emart /opt/emart/login/login-service-1.0.0.jar
 ```
 # Step:6 ==> Run the Package
 #### Create the systemd service "loginbbackend" for HA
@@ -180,19 +182,24 @@ After=network.target
 [Service]
 User=emart
 Group=emart
+WorkingDirectory=/opt/emart/login
+EnvironmentFile=/app/Digistack-Emart-App/backend/.env
 ExecStart=/usr/bin/java \
     -Xmx512m \
     -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} \
     -Dspring.data.mongodb.uri=${MONGO_URI} \
-    -jar login-service.jar
+    -Dapp.jwt.secret=${JWT_SECRET} \
+    -jar login-service-1.0.0.jar
 SuccessExitStatus=143
 Restart=always
 
+StandardOutput=append:/var/log/emart/login-service.log
+StandardError=append:/var/log/emart/login-service.log
+
 [Install]
 WantedBy=multi-user.target
-
 ```
-Enable the backens servive
+Enable the Backend servive
 ```
 sudo systemctl daemon-reload
 sudo systemctl enable loginbackend
@@ -206,7 +213,7 @@ To check the Service Logs
 journalctl -u loginbackend.service
 ```
 
-#### Check your Application Health 
+# Step:7 ==> Smoke Test {Check your Application Health }
 
 ```
 http://<Backend-Public-IP>:8080/health
