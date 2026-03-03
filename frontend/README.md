@@ -1,47 +1,51 @@
-## Launch EC2 "t2.micro" Instance and In Sg, Open port "80" for nginx '3000' for react Application
 # Frontend-react Web server
-
-### Install Node.js
+## Launch EC2 "t2.micro" Instance and In Sg, Open port "80" for nginx '3000' for react Application
+# Step:1 ==> Install the Required packages
+#### Install Node.js
 ```
 sudo yum install git -y
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 . ~/.nvm/nvm.sh
 nvm install 16
 ```
-### Install Nginx
+#### Install Nginx
 
 ```
 sudo yum install nginx -y
 ```
-Start the Service
+##### Start the Service
 ```
 sudo systemctl start nginx
 sudo systemctl enable nginx
 ```
-Create Frontend Directory
-```
-sudo mkdir -p /var/www/frontend/
-sudo chmod -R 755 /var/www/frontend/
-```
-## Get the Code
+# Step:2 ==> Create one Application User
 #### Create Application user to run the Applicatrion
 ```
-sudo addgroup -S emart && sudo adduser -S emart -G emart
+sudo groupadd -r emart
+sudo useradd -r -g emart -s /sbin/nologin emart
 ```
 #### Create central Application Directory for Application
 ```
 sudo mkdir /app
 ```
+#### Create Frontend Directory
+```
+sudo mkdir -p /var/www/frontend/
+sudo chmod -R 755 /var/www/frontend/
+sudo chown -R emart:emart /var/www/frontend/
+```
+# Step:3 ==> Get the Code
+Our Code we store in GIT Repo
 ```
 cd /app
-sudo git clone https://github.com/digistackops-project-org/Digistack-Emart-App.git
+sudo git clone https://github.com/digistackops-EMART-project/Digistack-Emart-App.git
 cd Digistack-Emart-App
 ```
 Switch branch
 
 ```
 sudo git checkout V1-Login-Module
-sudo chown -R emart:emart /app/Digistack-Emart-App
+sudo chown -R $USER:$USER /app/Digistack-Emart-App
 ```
 Note => Nginx we we for 2 purpose 
         (1) For Frontend Load Balancing 
@@ -56,7 +60,7 @@ HERE we mention our Backend-Private-IP in reverse Proxy configuration => so that
 
 Note ==> we already setup the Reverse Proxy using Nginx alredy setup "nginx.conf" no need to do anything
 
-### Setup "nginx.conf" for reverse Proxy to backend, we already have "nginx.conf" file 
+## Setup "nginx.conf" for reverse Proxy to backend, we already have "nginx.conf" file 
 
 ```
 cd frontend
@@ -72,7 +76,7 @@ restart your Nginx
 sudo nginx -t
 sudo systemctl restart nginx
 ```
-### Frontend Setup
+# Step:4 ==> Download the Dependencies
 Install Dependencies
 ### Add Environment .emv
 ```
@@ -84,6 +88,7 @@ REACT_APP_API='/api/v1'
 ```
 npm install
 ```
+# Step:5 ==> Build the Package
 Run the Test cases
 ```
 npm test -- --watchAll=false
@@ -96,6 +101,7 @@ Build the Frontend
 ```
 npm run build
 ```
+# Step:6 ==> Run the Package
 Copy build/ to /var/www/html or Nginx root
 ```
 sudo rm -rf /var/www/frontend/*
