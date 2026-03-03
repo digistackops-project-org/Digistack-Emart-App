@@ -1,42 +1,3 @@
-# Check the DB Connections
-## Setup your Application Database by executing "initdb.js" script from Application-server
-
-Step:1 ==> install "mongo-Client" for communicate with Mongo Database
-```
-sudo vim /etc/yum.repos.d/mongodb-org-8.0.repo
-```
-```
-[mongodb-org-8.0]
-name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/amazon/2023/mongodb-org/8.0/x86_64/
-gpgcheck=1
-enabled=1
-gpgkey=https://pgp.mongodb.com/server-8.0.asc
-```
-To install "Mongo-Shell" to communicate with Mongo database
-```
-sudo yum update -y
-sudo yum install -y mongodb-mongosh
-```
-### init the cart DB 
-```
-mongosh --quiet -u dbadmin -p "${ADMIN_PASS}" --authenticationDatabase admin < initdb.js
-```
-#### Test the connection between cart and Redis server
- Install Redis server
-```
-sudo dnf install -y  redis6
-```
-Enable redis Systemd service
-```
-sudo systemctl enable redis6
-sudo systemctl start redis6
-sudo systemctl status redis6
-```
-#### Test the connection
-```
-redis-cli -h <REDIS_SERVER_IP> -a <Redis-Password> ping
-```
 # Backend cart service Setup 
 # Step:1 ==> Install the Required packages
 ```
@@ -80,6 +41,39 @@ Create a bin directory Building package will crate in that Directory {like in Ja
 cd cart-service
 sudo mkdir -p bin
 sudo chown -R $USER:$USER /app/Digistack-Emart-App
+```
+## connect the DB
+## Setup your Application Database by executing "initdb.js" script from Application-server
+
+Step:1 ==> install "mongo-Client" for communicate with Mongo Database
+```
+sudo vim /etc/yum.repos.d/mongodb-org-8.0.repo
+```
+```
+[mongodb-org-8.0]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/amazon/2023/mongodb-org/8.0/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://pgp.mongodb.com/server-8.0.asc
+```
+To install "Mongo-Shell" to communicate with Mongo database
+```
+sudo yum update -y
+sudo yum install -y mongodb-mongosh
+```
+### init the cart DB 
+```
+mongosh --quiet --host <cart_Db_Private_IP>-u dbadmin -p "${ADMIN_PASS}" --authenticationDatabase admin < initdb.js
+```
+#### Test the connection between cart and Redis server
+ Install Redis server
+```
+sudo dnf install -y  redis6
+```
+#### Test the connection
+```
+redis-cli -h <REDIS_SERVER_IP> -a <Redis-Password> ping
 ```
 # Step:4 ==> Download the Dependencies
 #### Download the Dependencies
