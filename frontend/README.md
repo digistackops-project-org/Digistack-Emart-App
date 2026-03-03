@@ -1,40 +1,44 @@
-## Launch EC2 "t2.micro" Instance and In Sg, Open port "80" for nginx '3000' for react Application
 # Frontend-react Web server
-
-### Install Node.js
+## Launch EC2 "t2.micro" Instance and In Sg, Open port "80" for nginx '3000' for react Application
+# Step:1 ==> Install the Required packages
+#### Install Node.js
 ```
 sudo yum install git -y
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 . ~/.nvm/nvm.sh
 nvm install 16
 ```
-### Install Nginx
+#### Install Nginx
 
 ```
 sudo yum install nginx -y
 ```
-Start the Service
+##### Start the Service
 ```
 sudo systemctl start nginx
 sudo systemctl enable nginx
 ```
-Create Frontend Directory
-```
-sudo mkdir -p /var/www/frontend/
-sudo chmod -R 755 /var/www/frontend/
-```
-## Get the Code
+# Step:2 ==> Create one Application User
 #### Create Application user to run the Applicatrion
 ```
-sudo addgroup -S emart && sudo adduser -S emart -G emart
+sudo groupadd -r emart
+sudo useradd -r -g emart -s /sbin/nologin emart
 ```
 #### Create central Application Directory for Application
 ```
 sudo mkdir /app
 ```
+#### Create Frontend Directory
+```
+sudo mkdir -p /var/www/frontend/
+sudo chmod -R 755 /var/www/frontend/
+sudo chown -R  emart:emart /var/www/frontend/
+```
+# Step:3 ==> Get the Code
+Our Code we store in GIT Repo
 ```
 cd /app
-sudo git clone https://github.com/digistackops-project-org/Digistack-Emart-App.git
+sudo git clone https://github.com/digistackops-EMART-project/Digistack-Emart-App.git
 cd Digistack-Emart-App
 ```
 Switch branch
@@ -56,36 +60,34 @@ HERE we mention our Backend-Private-IP in reverse Proxy configuration => so that
 
 Note ==> we already setup the Reverse Proxy using Nginx alredy setup "nginx.conf" no need to do anything
 
-### Setup "nginx.conf" for reverse Proxy to backend, we already have "nginx.conf" file 
+## Setup "nginx.conf" for reverse Proxy to backend, we already have "nginx.conf" file 
 
 ```
 cd frontend
-sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
-sudo mv /app/Digistack-Emart-App/frontend/nginx.conf /etc/nginx/
+sudo mv /app/Digistack-Emart-App/frontend/emart.conf /etc/nginx/conf.d
 ```
 Edit your the Backend IP Address in nginx.conf
 ```
-sudo vim /etc/nginx/nginx.conf
+sudo vim /etc/nginx/conf.d/emart.conf
 ```
 restart your Nginx
 ```
 sudo nginx -t
 sudo systemctl restart nginx
 ```
-### Frontend Setup
+# Step:4 ==> Download the Dependencies
 Install Dependencies
 ### Add Environment .emv
 ```
 sudo vim .env
 ```
 ```
-REACT_APP_API_URL=/api/v1
-REACT_APP_CART_API_URL=/cart-api/api/v1
-REACT_APP_ENV=production
+REACT_APP_API='/api/v1'
 ```
 ```
-npm install
+npm ci --prefer-offline --silent
 ```
+# Step:5 ==> Build the Package
 Run the Test cases
 ```
 npm test -- --watchAll=false
@@ -98,9 +100,14 @@ Build the Frontend
 ```
 npm run build
 ```
+# Step:6 ==> Run the Package
 Copy build/ to /var/www/html or Nginx root
 ```
 sudo rm -rf /var/www/frontend/*
 sudo mv build/* /var/www/frontend/
 sudo systemctl restart nginx
+```
+# Step:7 ==> Smoke Test {Check your Application Health }
+```
+curl -sf http://<Frontend-private=-IP>:80
 ```
