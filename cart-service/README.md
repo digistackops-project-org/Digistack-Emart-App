@@ -71,9 +71,15 @@ mongosh --quiet --host <cart_Db_Private_IP>-u dbadmin -p "${ADMIN_PASS}" --authe
 ```
 sudo dnf install -y  redis6
 ```
+Enable redis Systemd service
+```
+sudo systemctl enable redis6
+sudo systemctl start redis6
+sudo systemctl status redis6
+```
 #### Test the connection
 ```
-redis-cli -h <REDIS_SERVER_IP> -a <Redis-Password> ping
+redis6-cli -h <REDIS_SERVER_IP> -a <Redis-Password> ping
 ```
 # Step:4 ==> Download the Dependencies
 #### Download the Dependencies
