@@ -40,43 +40,30 @@ cd Digistack-Emart-App
 ```
 sudo git checkout V2-Books-Module
 ```
-## Setup your Application Database by executing "master-data.js" script from Application-server
+## Setup your Application Database by executing "initdb.sql" script from Application-server
 
-Step:1 ==> install "mongo-Client" for communicate with Mongo Database
-
+Step:1 ==> install "POstgresql-Client" for communicate with POstgresql Database
 ```
-sudo vim /etc/yum.repos.d/mongodb-org-8.0.repo
+sudo dnf update -y
+sudo dnf install -y postgresql16
 ```
-```
-[mongodb-org-8.0]
-name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/amazon/2023/mongodb-org/8.0/x86_64/
-gpgcheck=1
-enabled=1
-gpgkey=https://pgp.mongodb.com/server-8.0.asc
-```
-To install "Mongo-Shell" to communicate with Mongo database
-```
-sudo yum update -y
-sudo yum install -y mongodb-mongosh
-```
-Step:2 ==> Execute your "master-data.js" script for your Application DB setup
+Step:2 ==> Execute your "init.sql" script for your Application DB setup
 
 ```
-mongo --host "mongodb://<DB-Private-IP>" < /app/NodeJS_3-Tier_Roboshop/catalouge/db/master-data.js
+PGPASSWORD="Admin@123" psql -h <DB-Private-IP> -U dbadmin -d postgres -f initdb.sql
 ```
 
- # Step:4 ==> Download the Dependencies
+# Step:4 ==> Download the Dependencies
 
 Get the Dependencies
 ```
-cd /app/NodeJS_3-Tier_Roboshop/catalouge/
+cd /app/Digistack-Emart-App/books-service
 npm install
 ```
 # Step:5 ==> RUN the Package
 Run the systemd file for running cart service
 ```
-sudo vim /etc/systemd/system/backend.service
+sudo vim /etc/systemd/system/books.service
 ```
 ```
 [Unit]
@@ -96,9 +83,9 @@ WantedBy=multi-user.target
 Reload systemd service
 ```
 sudo systemctl daemon-reload
-sudo systemctl enable backend
-sudo systemctl start backend
-sudo systemctl status backend
+sudo systemctl enable books
+sudo systemctl start books
+sudo systemctl status books
 ```
 
 
