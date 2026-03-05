@@ -40,18 +40,7 @@ cd Digistack-Emart-App
 ```
 sudo git checkout V2-Books-Module
 ```
-## Setup your Application Database by executing "initdb.sql" script from Application-server
 
-Step:1 ==> install "POstgresql-Client" for communicate with POstgresql Database
-```
-sudo dnf update -y
-sudo dnf install -y postgresql16
-```
-Step:2 ==> Execute your "init.sql" script for your Application DB setup
-
-```
-PGPASSWORD="Admin@123" psql -h <DB-Private-IP> -U dbadmin -d postgres -f initdb.sql
-```
 
 # Step:4 ==> Download the Dependencies
 
