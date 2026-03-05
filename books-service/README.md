@@ -1,5 +1,6 @@
 # Backend-Node.js Application server
 ## Launch EC2 "t2.micro" Instance and In Sg, Open port "8082" for NodeJS Application 
+# RUN DB Migration using flyway tool
 # Step:1 ==> Install the Required packages
 #### Install Node and NPM
 ```
