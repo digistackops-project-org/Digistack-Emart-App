@@ -9,7 +9,8 @@ import Login      from './components/auth/Login';
 import Signup     from './components/auth/Signup';
 import AppHeader  from './components/layout/AppHeader';
 import Dashboard  from './components/common/Dashboard';
-import BooksPage  from './components/books/BooksPage';
+import BooksPage   from './components/books/BooksPage';
+import CoursesPage from './components/courses/CoursesPage';
 
 // ============================================================
 // Layout: fixed header + scrollable main content area
@@ -50,7 +51,7 @@ function PublicRoute({ children }) {
 function ComingSoon({ service }) {
   const meta = {
     books:    { icon: '📚', tech: 'NodeJS + PostgreSQL' },
-    courses:  { icon: '🎓', tech: 'Python + MySQL'       },
+    courses:  { icon: '🎓', tech: 'Python + PostgreSQL'   },
     software: { icon: '💻', tech: 'Go + MongoDB'         },
   }[service] || { icon: '🔌', tech: 'TBD' };
 
@@ -100,7 +101,7 @@ function App() {
           >
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/books"     element={<BooksPage />} />
-            <Route path="/courses"   element={<ComingSoon service="courses" />} />
+            <Route path="/courses"   element={<CoursesPage />} />
             <Route path="/software"  element={<ComingSoon service="software" />} />
             <Route path="/profile"   element={<div style={{padding:40}}><h2>My Profile (coming soon)</h2></div>} />
             <Route path="/orders"    element={<div style={{padding:40}}><h2>My Orders (coming soon)</h2></div>} />

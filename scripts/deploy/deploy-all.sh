@@ -1,14 +1,16 @@
 #!/bin/bash
 # ============================================================
 # scripts/deploy/deploy-all.sh
-# Deploys all three services in order:
-#   1. Login Service  (Java Spring Boot)
-#   2. Cart Service   (Go)
-#   3. Frontend       (React → Nginx static)
-#   4. Nginx config   reload
+# Deploys ALL Emart services in dependency order:
+#   1. Login Service   (Java Spring Boot  :8080)
+#   2. Cart Service    (Go                :8081)
+#   3. Books Service   (Node.js           :8082)
+#   4. Course Service  (Python/FastAPI    :8083)
+#   5. Frontend        (React → Nginx static)
+#   6. Nginx config    reload
 #
 # Options:
-#   --skip-build   Use existing compiled artifacts
+#   --skip-build   Restart services without re-compiling/installing
 #
 # Run:  sudo bash scripts/deploy/deploy-all.sh
 # ============================================================
@@ -35,6 +37,7 @@ echo ""
 [[ -f /etc/emart/login.env ]] || die "/etc/emart/login.env not found. Run configure-env.sh first."
 [[ -f /etc/emart/cart.env  ]] || die "/etc/emart/cart.env not found.  Run configure-env.sh first."
 [[ -f /etc/emart/books.env ]] || die "/etc/emart/books.env not found. Run configure-env.sh first."
+[[ -f /etc/emart/course.env ]] || die "/etc/emart/course.env not found. Run configure-env.sh first."
 
 systemctl is-active --quiet mongod        || die "MongoDB not running:    sudo systemctl start mongod"
 systemctl is-active --quiet redis-server  || die "Redis not running:     sudo systemctl start redis-server"
@@ -58,7 +61,11 @@ info "Step 3/5: Deploying Books Service..."
 bash "$REPO_DIR/scripts/deploy/deploy-books.sh" $SKIP_BUILD
 echo ""
 
-info "Step 4/5: Building and deploying Frontend..."
+info "Step 4/5: Deploying Course Service (Python/FastAPI :8083)..."
+bash "$REPO_DIR/scripts/deploy/deploy-courses.sh" $SKIP_BUILD
+echo ""
+
+info "Step 5/5: Building and deploying Frontend..."
 bash "$REPO_DIR/scripts/deploy/deploy-frontend.sh" $SKIP_BUILD
 echo ""
 
@@ -88,6 +95,7 @@ check_health() {
 check_health "Login Service " "http://localhost:8080/health/ready"
 check_health "Cart Service  " "http://localhost:8081/health/ready"
 check_health "Books Service " "http://localhost:8082/health/ready"
+check_health "Course Service" "http://localhost:8083/health/ready"
 check_health "Nginx         " "http://localhost/nginx-health"
 
 SERVER_IP=$(hostname -I | awk '{print $1}')
@@ -100,5 +108,6 @@ echo "  Frontend   →  http://${SERVER_IP}/"
 echo "  Login API  →  http://${SERVER_IP}/api/v1/auth/login"
 echo "  Cart API   →  http://${SERVER_IP}/cart-api/api/v1/cart"
 echo "  Books API  →  http://${SERVER_IP}/books-api/api/v1/books"
+echo "  Courses API→  http://${SERVER_IP}/courses-api/api/v1/courses"
 echo "  Health     →  http://${SERVER_IP}/nginx-health"
 echo ""

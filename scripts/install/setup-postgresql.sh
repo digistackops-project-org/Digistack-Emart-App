@@ -112,3 +112,44 @@ echo "  3. Deploy team: bash scripts/deploy/deploy-books.sh"
 echo ""
 echo "  MONGO URIs for configure-env.sh:"
 echo "    postgresql://emart_books:${BOOKS_DB_PASS}@localhost:5432/booksdb"
+
+# ============================================================
+# Phase 4 addition — coursedb setup
+# ============================================================
+echo ""
+echo "=== Emart CourseDB Setup ==="
+echo ""
+read -rsp "Enter password for emart_course DB user: " COURSE_DB_PASS
+echo ""
+
+info "Creating PostgreSQL user 'emart_course' and database 'coursedb'..."
+sudo -u postgres psql <<SQL2
+DO \$\$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'emart_course') THEN
+    CREATE USER emart_course WITH LOGIN PASSWORD '${COURSE_DB_PASS}';
+    RAISE NOTICE 'User emart_course created';
+  ELSE
+    ALTER USER emart_course WITH PASSWORD '${COURSE_DB_PASS}';
+    RAISE NOTICE 'User emart_course password updated';
+  END IF;
+END
+\$\$;
+
+SELECT 'CREATE DATABASE coursedb OWNER emart_course ENCODING ''UTF8'' LC_COLLATE ''en_US.UTF-8'' LC_CTYPE ''en_US.UTF-8'' TEMPLATE template0'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'coursedb')\gexec
+
+GRANT CONNECT ON DATABASE coursedb TO emart_course;
+SQL2
+
+sudo -u postgres psql -d coursedb <<SQL3
+GRANT USAGE  ON SCHEMA public TO emart_course;
+GRANT CREATE ON SCHEMA public TO emart_course;
+GRANT ALL PRIVILEGES ON ALL TABLES    IN SCHEMA public TO emart_course;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO emart_course;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES    TO emart_course;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO emart_course;
+SQL3
+
+ok "coursedb database and emart_course user ready"
+ok "Run Flyway: DB_PASSWORD='${COURSE_DB_PASS}' DB_NAME=coursedb bash course-service/db/run-flyway.sh migrate"
