@@ -1,11 +1,12 @@
 #!/bin/bash
 # ============================================================
 # scripts/deploy/deploy-all.sh
-# Deploys ALL Emart services in dependency order:
+# Deploys ALL Emart services in dependency order (5 microservices):
 #   1. Login Service   (Java Spring Boot  :8080)
 #   2. Cart Service    (Go                :8081)
 #   3. Books Service   (Node.js           :8082)
 #   4. Course Service  (Python/FastAPI    :8083)
+#   5. Payment Service (Java Spring Boot  :8084)
 #   5. Frontend        (React → Nginx static)
 #   6. Nginx config    reload
 #
@@ -61,11 +62,15 @@ info "Step 3/5: Deploying Books Service..."
 bash "$REPO_DIR/scripts/deploy/deploy-books.sh" $SKIP_BUILD
 echo ""
 
-info "Step 4/5: Deploying Course Service (Python/FastAPI :8083)..."
+info "Step 4/6: Deploying Course Service (Python/FastAPI :8083)..."
 bash "$REPO_DIR/scripts/deploy/deploy-courses.sh" $SKIP_BUILD
 echo ""
 
-info "Step 5/5: Building and deploying Frontend..."
+info "Step 5/6: Deploying Payment Service (Java Spring Boot :8084)..."
+bash "$REPO_DIR/scripts/deploy/deploy-payment.sh" $SKIP_BUILD
+echo ""
+
+info "Step 6/6: Building and deploying Frontend..."
 bash "$REPO_DIR/scripts/deploy/deploy-frontend.sh" $SKIP_BUILD
 echo ""
 
@@ -96,6 +101,7 @@ check_health "Login Service " "http://localhost:8080/health/ready"
 check_health "Cart Service  " "http://localhost:8081/health/ready"
 check_health "Books Service " "http://localhost:8082/health/ready"
 check_health "Course Service" "http://localhost:8083/health/ready"
+check_health "Payment Service" "http://localhost:8084/health/ready"
 check_health "Nginx         " "http://localhost/nginx-health"
 
 SERVER_IP=$(hostname -I | awk '{print $1}')
@@ -109,5 +115,6 @@ echo "  Login API  →  http://${SERVER_IP}/api/v1/auth/login"
 echo "  Cart API   →  http://${SERVER_IP}/cart-api/api/v1/cart"
 echo "  Books API  →  http://${SERVER_IP}/books-api/api/v1/books"
 echo "  Courses API→  http://${SERVER_IP}/courses-api/api/v1/courses"
+echo "  Payment API→  http://${SERVER_IP}/payment-api/api/v1/checkout"
 echo "  Health     →  http://${SERVER_IP}/nginx-health"
 echo ""

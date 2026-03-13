@@ -9,8 +9,10 @@ import Login      from './components/auth/Login';
 import Signup     from './components/auth/Signup';
 import AppHeader  from './components/layout/AppHeader';
 import Dashboard  from './components/common/Dashboard';
-import BooksPage   from './components/books/BooksPage';
-import CoursesPage from './components/courses/CoursesPage';
+import BooksPage    from './components/books/BooksPage';
+import CoursesPage  from './components/courses/CoursesPage';
+import CheckoutPage from './components/checkout/CheckoutPage';
+import OrdersPage   from './components/checkout/OrdersPage';
 
 // ============================================================
 // Layout: fixed header + scrollable main content area
@@ -104,7 +106,9 @@ function App() {
             <Route path="/courses"   element={<CoursesPage />} />
             <Route path="/software"  element={<ComingSoon service="software" />} />
             <Route path="/profile"   element={<div style={{padding:40}}><h2>My Profile (coming soon)</h2></div>} />
-            <Route path="/orders"    element={<div style={{padding:40}}><h2>My Orders (coming soon)</h2></div>} />
+            <Route path="/orders"    element={<OrdersPage />} />
+            <Route path="/orders/:orderId" element={<OrdersPage />} />
+            <Route path="/checkout"  element={<CheckoutPage />} />
           </Route>
 
           {/* ── Fallback ── */}

@@ -1,13 +1,20 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { toast } from 'react-toastify';
 import './CartDrawer.css';
 
 function CartDrawer() {
+  const navigate = useNavigate();
   const {
     cart, cartSummary, loading, cartOpen, closeCart,
     updateItem, removeItem, clearCart,
   } = useCart();
+
+  const handleCheckout = () => {
+    closeCart();
+    navigate('/checkout');
+  };
 
   const handleQuantityChange = async (itemId, newQty) => {
     if (newQty < 1) return;
@@ -144,7 +151,7 @@ function CartDrawer() {
                 <span className="total-amount">{formatPrice(cartSummary.total_price)}</span>
               </div>
             </div>
-            <button className="checkout-btn" data-testid="checkout-btn">
+            <button className="checkout-btn" onClick={handleCheckout} data-testid="checkout-btn">
               Proceed to Checkout →
             </button>
             <button className="clear-cart-btn" onClick={handleClear} data-testid="clear-cart">

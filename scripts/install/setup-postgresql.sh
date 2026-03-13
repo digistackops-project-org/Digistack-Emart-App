@@ -153,3 +153,37 @@ SQL3
 
 ok "coursedb database and emart_course user ready"
 ok "Run Flyway: DB_PASSWORD='${COURSE_DB_PASS}' DB_NAME=coursedb bash course-service/db/run-flyway.sh migrate"
+
+# ============================================================
+# Phase 5 addition — paymentdb setup
+# ============================================================
+echo ""
+echo "=== Emart PaymentDB Setup ==="
+echo ""
+read -rsp "Enter password for emart_payment DB user: " PAYMENT_DB_PASS
+echo ""
+
+sudo -u postgres psql <<SQL4
+DO \$\$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'emart_payment') THEN
+    CREATE USER emart_payment WITH LOGIN PASSWORD '${PAYMENT_DB_PASS}';
+  ELSE
+    ALTER USER emart_payment WITH PASSWORD '${PAYMENT_DB_PASS}';
+  END IF;
+END
+\$\$;
+SELECT 'CREATE DATABASE paymentdb OWNER emart_payment ENCODING ''UTF8'' TEMPLATE template0'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'paymentdb')\gexec
+GRANT CONNECT ON DATABASE paymentdb TO emart_payment;
+SQL4
+
+sudo -u postgres psql -d paymentdb <<SQL5
+GRANT USAGE  ON SCHEMA public TO emart_payment;
+GRANT CREATE ON SCHEMA public TO emart_payment;
+GRANT ALL PRIVILEGES ON ALL TABLES    IN SCHEMA public TO emart_payment;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO emart_payment;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES    TO emart_payment;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO emart_payment;
+SQL5
+ok "paymentdb and emart_payment user ready"
