@@ -5,9 +5,8 @@
 #### Install Node and NPM
 ```
 sudo yum update -y
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
-. ~/.nvm/nvm.sh
-nvm install 16
+curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+sudo yum install nodejs -y
 ```
 #### Check Node Version
 ```
