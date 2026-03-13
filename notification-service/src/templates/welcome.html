@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Welcome to Emart!</title>
+  <style>
+    body{margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#111827}
+    .wrapper{max-width:600px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+    .header{background:linear-gradient(135deg,#7C3AED,#8B5CF6);padding:40px;text-align:center}
+    .header .logo{font-size:2.5rem;font-weight:900;color:#fff;letter-spacing:-1px}
+    .header p{color:#DDD6FE;font-size:.95rem;margin:8px 0 0}
+    .body{padding:32px 40px}
+    .greeting{font-size:1.2rem;font-weight:700;color:#111827;margin-bottom:8px}
+    .sub{font-size:.9rem;color:#6B7280;margin-bottom:28px}
+    .cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:24px 0}
+    .card{background:#F9FAFB;border-radius:12px;padding:16px 12px;text-align:center}
+    .card .icon{font-size:1.8rem;margin-bottom:8px}
+    .card .label{font-size:.78rem;font-weight:700;color:#374151}
+    .card .desc{font-size:.72rem;color:#9CA3AF;margin-top:4px}
+    .cta{text-align:center;margin:28px 0}
+    .cta a{background:linear-gradient(135deg,#7C3AED,#8B5CF6);color:#fff;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:700;font-size:.95rem;display:inline-block}
+    .footer{background:#F9FAFB;padding:20px 40px;text-align:center;font-size:.78rem;color:#9CA3AF;border-top:1px solid #F3F4F6}
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="logo">Emart</div>
+    <p>Your one-stop tech marketplace</p>
+  </div>
+  <div class="body">
+    <div class="greeting">👋 Welcome, {{name}}!</div>
+    <div class="sub">We're excited to have you. Here's what you can explore on Emart:</div>
+    <div class="cards">
+      <div class="card"><div class="icon">📚</div><div class="label">Books</div><div class="desc">Programming &amp; tech books</div></div>
+      <div class="card"><div class="icon">🎓</div><div class="label">Courses</div><div class="desc">Online learning paths</div></div>
+      <div class="card"><div class="icon">💻</div><div class="label">Software</div><div class="desc">Licenses &amp; dev tools</div></div>
+    </div>
+    <div class="cta">
+      <a href="https://emart.com">Start Exploring →</a>
+    </div>
+  </div>
+  <div class="footer">© {{year}} Emart · All rights reserved</div>
+</div>
+</body>
+</html>

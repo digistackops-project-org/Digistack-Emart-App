@@ -1,0 +1,29 @@
+{
+  "name": "emart-notification-service",
+  "version": "1.0.0",
+  "description": "Emart Notification Service — Phase 9 — Order confirmation emails + webhooks",
+  "main": "src/server.js",
+  "scripts": {
+    "start":     "node src/server.js",
+    "dev":       "nodemon src/server.js",
+    "test":      "jest --runInBand --forceExit",
+    "test:unit": "jest tests/unit --runInBand --forceExit",
+    "test:api":  "jest tests/api  --runInBand --forceExit"
+  },
+  "dependencies": {
+    "express":          "^4.19.2",
+    "nodemailer":       "^6.9.14",
+    "jsonwebtoken":     "^9.0.2",
+    "winston":          "^3.13.0",
+    "helmet":           "^7.1.0",
+    "cors":             "^2.8.5",
+    "express-rate-limit":"^7.3.1",
+    "handlebars":       "^4.7.8"
+  },
+  "devDependencies": {
+    "jest":      "^29.7.0",
+    "supertest": "^7.0.0",
+    "nodemon":   "^3.1.4"
+  },
+  "jest": { "testEnvironment": "node", "testTimeout": 30000 }
+}

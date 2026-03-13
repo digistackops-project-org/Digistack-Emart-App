@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Payment Failed — Emart</title>
+  <style>
+    body{margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#111827}
+    .wrapper{max-width:600px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+    .header{background:linear-gradient(135deg,#DC2626,#EF4444);padding:32px 40px;text-align:center}
+    .header h1{color:#fff;margin:0;font-size:1.5rem;font-weight:800}
+    .header .icon{font-size:2.5rem;margin-bottom:12px}
+    .body{padding:32px 40px}
+    .greeting{font-size:1.05rem;color:#374151;margin-bottom:20px}
+    .order-badge{background:#FEE2E2;color:#991B1B;border-radius:100px;padding:6px 18px;font-size:.875rem;font-weight:700;display:inline-block;margin-bottom:24px}
+    .info-box{background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:16px 20px;font-size:.875rem;color:#92400E;line-height:1.7;margin:20px 0}
+    .tips{background:#F9FAFB;border-radius:12px;padding:16px 20px;margin:20px 0}
+    .tips h3{font-size:.85rem;font-weight:700;color:#374151;margin:0 0 10px}
+    .tips li{font-size:.83rem;color:#6B7280;margin-bottom:6px}
+    .cta{text-align:center;margin:28px 0}
+    .cta a{background:#EF4444;color:#fff;text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:700;font-size:.95rem;display:inline-block}
+    .footer{background:#F9FAFB;padding:20px 40px;text-align:center;font-size:.78rem;color:#9CA3AF;border-top:1px solid #F3F4F6}
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="icon">❌</div>
+    <h1>Payment Failed</h1>
+  </div>
+  <div class="body">
+    <p class="greeting">Hi <strong>{{userName}}</strong>, unfortunately your payment could not be processed.</p>
+    <div class="order-badge">{{orderNumber}}</div>
+
+    <div class="info-box">
+      ⚠️ Your order has been saved. No amount has been charged to your account.
+      You can retry payment from the My Orders page at any time.
+    </div>
+
+    <div class="tips">
+      <h3>Common reasons for payment failure:</h3>
+      <ul>
+        <li>Insufficient funds in your account</li>
+        <li>Card details entered incorrectly</li>
+        <li>Bank blocked the transaction (international/online limit)</li>
+        <li>UPI PIN entered incorrectly or request timed out</li>
+        <li>Temporary issue with your bank's servers</li>
+      </ul>
+    </div>
+
+    <div class="cta">
+      <a href="https://emart.com/orders">Retry Payment →</a>
+    </div>
+  </div>
+  <div class="footer">
+    © {{year}} Emart · If you need help, reply to this email.<br>
+    <a href="https://emart.com" style="color:#3B82F6">emart.com</a>
+  </div>
+</div>
+</body>
+</html>

@@ -107,17 +107,6 @@ else
     ok "Redis installed and started"
 fi
 
-# ── PostgreSQL 15 (for Books Service) ────────────────────────
-info "Installing PostgreSQL 15..."
-if systemctl is-active --quiet postgresql 2>/dev/null; then
-    ok "PostgreSQL already running"
-else
-    apt-get install -y -qq postgresql postgresql-contrib
-    systemctl enable postgresql
-    systemctl start  postgresql
-    ok "PostgreSQL 15 installed and started"
-fi
-
 # ── Nginx ────────────────────────────────────────────────────
 info "Installing Nginx..."
 apt-get install -y -qq nginx
@@ -127,7 +116,7 @@ ok "Nginx installed"
 # ── System user + directories ────────────────────────────────
 info "Creating emart user and directories..."
 id emart &>/dev/null || useradd -r -s /bin/false -d /opt/emart emart
-mkdir -p /opt/emart/login-service /opt/emart/cart-service /opt/emart/books-service
+mkdir -p /opt/emart/login-service /opt/emart/cart-service
 mkdir -p /var/www/emart/frontend
 mkdir -p /var/log/emart
 mkdir -p /etc/emart
