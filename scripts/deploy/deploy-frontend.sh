@@ -26,7 +26,7 @@ if [[ "$SKIP_BUILD" != "--skip-build" ]]; then
     # .env.production sets the correct API base URLs for Nginx proxy
     [[ -f .env.production ]] || die ".env.production not found in frontend/"
 
-    npm ci --prefer-offline --silent
+    npm install --silent
     ok "npm ci done"
 
     info "Building React app..."
@@ -45,3 +45,38 @@ ok "Static files deployed to $WEBROOT"
 
 [[ -f "$WEBROOT/index.html" ]] || die "index.html missing in $WEBROOT"
 ok "Frontend deployed: $(ls "$WEBROOT" | wc -l) files in webroot"
+
+# ── Install / activate Nginx site ────────────────────────────
+info "Configuring Nginx..."
+cp "$REPO_DIR/nginx/emart.conf" /etc/nginx/sites-available/emart
+
+# Enable site + disable default
+ln -sf /etc/nginx/sites-available/emart /etc/nginx/sites-enabled/emart
+rm -f /etc/nginx/sites-enabled/default
+
+nginx -t || die "Nginx config test failed. Check /etc/nginx/sites-available/emart"
+systemctl reload nginx
+ok "Nginx reloaded — Emart site active"
+
+SERVER_IP=$(hostname -I | awk '{print $1}')
+echo ""
+echo "══════════════════════════════════════════"
+ok "Frontend deployed!"
+echo "══════════════════════════════════════════"
+echo "  URL: http://${SERVER_IP}/"
+echo ""
+
+# ── Install / activate Nginx site ────────────────────────────
+info "Configuring Nginx..."
+cp "$REPO_DIR/nginx/emart.conf" /etc/nginx/sites-available/emart
+ln -sf /etc/nginx/sites-available/emart /etc/nginx/sites-enabled/emart
+rm -f /etc/nginx/sites-enabled/default
+nginx -t || die "Nginx config test failed. Check /etc/nginx/sites-available/emart"
+systemctl reload nginx
+ok "Nginx reloaded — Emart site active"
+SERVER_IP=$(hostname -I | awk '{print $1}')
+echo ""
+echo "══════════════════════════════════════════"
+ok "Frontend deployed!"
+echo "  URL: http://${SERVER_IP}/"
+echo "══════════════════════════════════════════"

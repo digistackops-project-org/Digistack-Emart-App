@@ -1,141 +1,49 @@
-# Emart Monorepo — Physical Server Deployment
+# Emart — Microservices E-Commerce Platform
 
-Single repository containing all three services deployed directly on an Ubuntu server (no Docker, no Kubernetes).
+Complete source code for all 7 backend services, React frontend, Nginx config, and deploy scripts.
 
-```
-emart/
-├── login-service/          Java 17 + Spring Boot 3.2   (port 8080)
-├── cart-service/           Go 1.21 + Gin               (port 8081)
-├── frontend/               React 18                    (Nginx port 80)
-├── nginx/emart.conf        Reverse proxy configuration
-├── config/                 Environment variable templates
-└── scripts/
-    ├── install/            One-time server setup (3 scripts)
-    └── deploy/             Per-service deploy scripts
-```
+## Services
 
-## Architecture
+| Service | Stack | Port | Database |
+|---------|-------|------|----------|
+| login-service | Java 21 / Spring Boot | :8080 | MongoDB (userdb) |
+| cart-service | Go 1.22 / Gin | :8081 | MongoDB + Redis |
+| books-service | Node.js 18 / Express | :8082 | PostgreSQL (booksdb) |
+| course-service | Python 3.12 / FastAPI | :8083 | PostgreSQL (coursedb) |
+| payment-service | Java 21 / Spring Boot | :8084 | PostgreSQL (paymentdb) |
+| profile-service | Node.js 18 / Express | :8086 | PostgreSQL (profiledb) |
+| notification-service | Node.js 18 / Nodemailer | :8088 | None |
+| frontend | React 18 | :80 (via Nginx) | — |
 
-```
-Browser
-  │  GET /              → Nginx → /var/www/emart/frontend  (React SPA)
-  │  POST /api/*        → Nginx → localhost:8080          (Login Service)
-  │  POST /cart-api/*   → Nginx → localhost:8081          (Cart Service)
-  └──────────────────────────────────────────────────────────
-                         MongoDB 127.0.0.1:27017
-                           ├─ userdb  (login-service)
-                           └─ cart    (cart-service)
-                         Redis   127.0.0.1:6379
-                           └─ cart:*  (cart-service primary store)
-```
-
-## Quick Start — First-Time Setup
+## Quick Start
 
 ```bash
-git clone https://github.com/your-org/emart.git
-cd emart
-
-# 1. Install all server dependencies (Java, Go, Node, MongoDB, Redis, Nginx)
+# 1. Install all runtimes (Ubuntu 22.04)
 sudo bash scripts/install/install.sh
 
-# 2. Create MongoDB databases and users
+# 2. Set up MongoDB
 sudo bash scripts/install/setup-mongodb.sh
 
-# 3. Write /etc/emart/login.env and /etc/emart/cart.env
+# 3. Set up PostgreSQL databases
+sudo bash scripts/install/setup-postgresql.sh
+
+# 4. Configure all env files
 sudo bash scripts/install/configure-env.sh
 
-# 4. Deploy everything
+# 5. Deploy everything
 sudo bash scripts/deploy/deploy-all.sh
 ```
 
-## Redeploy
+## Deployment Guide
 
-```bash
-# All services
-sudo bash scripts/deploy/deploy-all.sh
+See **Emart_Complete_Deployment_Guide.docx** for full instructions including:
+- Server prerequisites and sizing
+- Step-by-step installation and configuration
+- All API endpoint references
+- Troubleshooting guide
+- Test credentials and payment test cards
 
-# Individual services
-sudo bash scripts/deploy/deploy-login.sh
-sudo bash scripts/deploy/deploy-cart.sh
-sudo bash scripts/deploy/deploy-frontend.sh
+## Default Credentials
 
-# Skip rebuild (restart with existing compiled artifacts)
-sudo bash scripts/deploy/deploy-all.sh --skip-build
-```
-
-## Service Management
-
-```bash
-sudo systemctl status  emart-login emart-cart nginx mongod redis-server
-sudo systemctl restart emart-login
-sudo systemctl restart emart-cart
-sudo systemctl reload  nginx
-
-# Logs
-journalctl -u emart-login -f
-journalctl -u emart-cart  -f
-tail -f /var/log/emart/login-service.log
-tail -f /var/log/emart/cart-service.log
-```
-
-## Health Endpoints
-
-| Service         | URL                                       |
-|-----------------|-------------------------------------------|
-| Login (direct)  | `http://localhost:8080/health/ready`      |
-| Cart (direct)   | `http://localhost:8081/health/ready`      |
-| Login (Nginx)   | `http://server-ip/api/v1/health/ready`    |
-| Cart (Nginx)    | `http://server-ip/cart-api/health/ready`  |
-| Nginx           | `http://server-ip/nginx-health`           |
-
-## Running Tests
-
-```bash
-# Login Service (Java)
-cd login-service
-mvn test                               # Unit tests (JaCoCo min 80%)
-mvn verify -P integration-test         # Unit + Integration (Testcontainers)
-API_BASE_URL=http://localhost:8080 mvn test -P api-test
-
-# Cart Service (Go)
-cd cart-service
-make test-unit                         # Unit tests
-make test-integration                  # Integration (Testcontainers)
-JWT_TOKEN=<token> API_BASE_URL=http://localhost:8081 make test-api
-
-# Frontend (React)
-cd frontend
-npm test -- --watchAll=false           # Component tests
-npm run test:ci                        # CI mode with coverage
-```
-
-## Environment Variables
-
-Config files live in `/etc/emart/` (chmod 640, owned root:emart).
-
-| Variable           | Service  | Description                            |
-|--------------------|----------|----------------------------------------|
-| `SPRING_PROFILE`   | Login    | `dev` or `prod`                        |
-| `MONGO_URI`        | Both     | MongoDB connection URI                 |
-| `JWT_SECRET`       | Both     | **MUST be identical in both files**    |
-| `JWT_EXPIRATION_MS`| Login    | Token lifetime in ms (default 3600000) |
-| `REDIS_PASSWORD`   | Cart     | Redis auth password                    |
-| `SYNC_INTERVAL`    | Cart     | Redis→MongoDB sync interval (30s)      |
-
-## Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| Login service 401 on cart API | `JWT_SECRET` mismatch. Verify both env files are identical, restart both services. |
-| Cart health 503 | Check Redis: `redis-cli -a $PASS ping`; Check MongoDB: `mongosh` |
-| Migration lock stuck | `mongosh cart --eval 'db.mongockLock.updateOne({_id:"migration-lock"},{$set:{locked:false}})'` |
-| Frontend blank page | Check Nginx: `nginx -t`, verify `/var/www/emart/frontend/index.html` exists |
-| 502 Bad Gateway | Service not running on expected port: `ss -tlnp \| grep 8080` |
-
-```bash
-# Diagnostic one-liner
-systemctl status emart-login emart-cart nginx mongod redis-server
-ss -tlnp | grep -E '80|8080|8081|27017|6379'
-curl -s http://localhost:8080/health/ready | python3 -m json.tool
-curl -s http://localhost:8081/health/ready | python3 -m json.tool
-```
+- **Admin login:** admin@emart.com / Admin@123
+- **Test payment (fail):** card 4000000000000002 or UPI fail@upi

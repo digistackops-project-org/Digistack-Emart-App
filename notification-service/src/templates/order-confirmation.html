@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Order Confirmed — Emart</title>
+  <style>
+    body{margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#111827}
+    .wrapper{max-width:600px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+    .header{background:linear-gradient(135deg,#1D4ED8,#3B82F6);padding:32px 40px;text-align:center}
+    .header h1{color:#fff;margin:0;font-size:1.5rem;font-weight:800}
+    .header .icon{font-size:2.5rem;margin-bottom:12px}
+    .body{padding:32px 40px}
+    .greeting{font-size:1.05rem;color:#374151;margin-bottom:20px}
+    .order-badge{background:#DBEAFE;color:#1E40AF;border-radius:100px;padding:6px 18px;font-size:.875rem;font-weight:700;display:inline-block;margin-bottom:24px}
+    .section-title{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7280;margin:0 0 12px}
+    .item-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F3F4F6}
+    .item-name{font-weight:600;color:#111827;font-size:.9rem}
+    .item-meta{font-size:.78rem;color:#6B7280;margin-top:2px}
+    .item-price{font-weight:700;color:#1D4ED8;font-size:.9rem}
+    .totals{background:#F9FAFB;border-radius:12px;padding:16px 20px;margin:20px 0}
+    .total-row{display:flex;justify-content:space-between;padding:5px 0;font-size:.875rem;color:#6B7280}
+    .total-row.grand{font-size:1rem;font-weight:800;color:#111827;padding-top:10px;margin-top:6px;border-top:2px solid #E5E7EB}
+    .addr-box{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:16px 20px;font-size:.85rem;color:#065F46;line-height:1.7}
+    .txn-box{background:#EFF6FF;border-radius:12px;padding:14px 20px;margin:20px 0;font-size:.82rem;color:#1E40AF}
+    .txn-box code{font-family:monospace;font-size:.9rem;background:#DBEAFE;padding:2px 8px;border-radius:4px}
+    .cta{text-align:center;margin:28px 0}
+    .cta a{background:#3B82F6;color:#fff;text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:700;font-size:.95rem;display:inline-block}
+    .footer{background:#F9FAFB;padding:20px 40px;text-align:center;font-size:.78rem;color:#9CA3AF;border-top:1px solid #F3F4F6}
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="icon">✅</div>
+    <h1>Order Confirmed!</h1>
+  </div>
+  <div class="body">
+    <p class="greeting">Hi <strong>{{userName}}</strong>, your order has been confirmed and is being processed.</p>
+    <div class="order-badge">{{orderNumber}}</div>
+
+    <p class="section-title">Items Ordered</p>
+    {{#each items}}
+    <div class="item-row">
+      <div>
+        <div class="item-name">{{productName}}</div>
+        <div class="item-meta">{{category}} · Qty {{quantity}}</div>
+      </div>
+      <div class="item-price">{{subtotal}}</div>
+    </div>
+    {{/each}}
+
+    <div class="totals">
+      <div class="total-row"><span>Subtotal</span><span>{{subtotal}}</span></div>
+      <div class="total-row"><span>GST (18%)</span><span>{{tax}}</span></div>
+      <div class="total-row"><span>Shipping</span><span>{{shipping}}</span></div>
+      <div class="total-row grand"><span>Total Paid</span><span>{{totalAmount}}</span></div>
+    </div>
+
+    {{#if shippingAddress}}
+    <p class="section-title">Delivery Address</p>
+    <div class="addr-box">
+      📦 {{shippingAddress.fullName}}<br>
+      {{shippingAddress.line1}}{{#if shippingAddress.line2}}, {{shippingAddress.line2}}{{/if}}<br>
+      {{shippingAddress.city}}, {{shippingAddress.state}} — {{shippingAddress.pinCode}}
+    </div>
+    {{/if}}
+
+    <div class="txn-box">
+      💳 Payment Method: <strong>{{paymentMethod}}</strong><br>
+      Transaction ID: <code>{{transactionId}}</code>
+    </div>
+
+    <div class="cta">
+      <a href="https://emart.com/orders">View My Order</a>
+    </div>
+  </div>
+  <div class="footer">
+    © {{year}} Emart · All rights reserved<br>
+    Questions? Reply to this email or visit <a href="https://emart.com" style="color:#3B82F6">emart.com</a>
+  </div>
+</div>
+</body>
+</html>

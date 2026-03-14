@@ -25,7 +25,7 @@ const NAV_ITEMS = [
     icon: '🎓',
     color: '#3B82F6',
     description: 'Online learning courses',
-    badge: 'New',
+    badge: null,
   },
   {
     id: 'software',
@@ -34,7 +34,7 @@ const NAV_ITEMS = [
     icon: '💻',
     color: '#8B5CF6',
     description: 'Software licenses & tools',
-    badge: null,
+    badge: 'New',
   },
 ];
 
@@ -150,6 +150,9 @@ function AppHeader() {
                 </button>
                 <button className="dropdown-item" onClick={() => navigate('/orders')}>
                   <span>📦</span> My Orders
+                </button>
+                <button className="dropdown-item" onClick={() => navigate('/admin')}>
+                  <span>⚙️</span> Admin Panel
                 </button>
                 <button className="dropdown-item" onClick={() => openCart()}>
                   <span>🛒</span> My Cart
